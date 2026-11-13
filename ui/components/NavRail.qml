@@ -161,7 +161,7 @@ Item {
         signal activated
 
         height: entry.expanded ? 48 : 56
-        width: parent ? parent.width : 76
+        width: parent ? parent.width : 80
 
         Behavior on height {
             NumberAnimation {

@@ -1004,9 +1004,9 @@ ApplicationWindow {
         Rectangle {
             id: sidebar
             Layout.fillHeight: true
-            Layout.preferredWidth: navRail.expanded ? 240 : 76
-            Layout.minimumWidth: navRail.expanded ? 240 : 76
-            Layout.maximumWidth: navRail.expanded ? 240 : 76
+            Layout.preferredWidth: navRail.expanded ? 256 : 80
+            Layout.minimumWidth: navRail.expanded ? 256 : 80
+            Layout.maximumWidth: navRail.expanded ? 256 : 80
             color: uiColors.surfaceContainerLow
             clip: true
 

@@ -77,6 +77,7 @@ QtObject {
     readonly property color surfaceContainer:      isDark ? blend("#20232A", rawSeed, 0.08) : blend("#EFE7F4", rawSeed, 0.07)
     readonly property color surfaceContainerHigh:  isDark ? blend("#2A2D35", rawSeed, 0.09) : blend("#E9E1EF", rawSeed, 0.09)
     readonly property color surfaceContainerHighest:isDark ? blend("#353841", rawSeed, 0.11) : blend("#E3DBE9", rawSeed, 0.11)
+    readonly property color surfaceVariant:        isDark ? blend("#44474F", rawSeed, 0.14) : blend("#E1E2EC", rawSeed, 0.14)
 
     // High Contrast Typography Tokens (WCAG AAA compliant)
     readonly property color onSurface:             isDark ? "#F4F4FA" : "#111216"
@@ -129,6 +130,30 @@ QtObject {
         readonly property int large:      16
         readonly property int extraLarge: 28
         readonly property int full:       1000
+    }
+
+    // ── Spacing Scale (4dp / 8dp Grid) ───────────────────────────
+    readonly property QtObject spacing: QtObject {
+        readonly property int none: 0
+        readonly property int xxs:  2
+        readonly property int xs:   4
+        readonly property int sm:   8
+        readonly property int md:   12
+        readonly property int lg:   16
+        readonly property int xl:   20
+        readonly property int xxl:  24
+        readonly property int xxxl: 32
+        readonly property int huge: 48
+    }
+
+    // ── Elevation System (Levels 0 - 5) ──────────────────────────
+    readonly property QtObject elevation: QtObject {
+        readonly property color level0: theme.surface
+        readonly property color level1: theme.surfaceContainerLow
+        readonly property color level2: theme.surfaceContainer
+        readonly property color level3: theme.surfaceContainerHigh
+        readonly property color level4: theme.surfaceContainerHighest
+        readonly property color level5: theme.blend(theme.surfaceContainerHighest, theme.primary, 0.08)
     }
 
     // ── Typography Scale ─────────────────────────────────────────
