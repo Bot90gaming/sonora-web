@@ -45,15 +45,28 @@ class _Worker(QRunnable):
 
     def run(self):
         try:
-            self.signals.result.emit(self.function())
+            res = self.function()
+            try:
+                self.signals.result.emit(res)
+            except RuntimeError:
+                return
         except AuthenticationRequiredError as exc:
             logger.info("YouTube Music requires a fresh sign-in")
-            self.signals.error.emit(exc)
+            try:
+                self.signals.error.emit(exc)
+            except RuntimeError:
+                pass
         except Exception as exc:
             logger.exception("Background UI task failed")
-            self.signals.error.emit(exc)
+            try:
+                self.signals.error.emit(exc)
+            except RuntimeError:
+                pass
         finally:
-            self.signals.finished.emit(self.token)
+            try:
+                self.signals.finished.emit(self.token)
+            except RuntimeError:
+                pass
 
 
 class _Completion(QObject):
@@ -143,9 +156,9 @@ class SonoraBridge(QObject):
         self.downloadErrorReceived.connect(self._download_failed)
         self.dynamicColorReceived.connect(self._set_dynamic_color)
         self.lyricsReceived.connect(self._set_lyrics)
-        self._player.on_position = self.positionReceived.emit
-        self._player.on_state_change = self.stateReceived.emit
-        self._player.on_error = self.playerErrorReceived.emit
+        self._player.on_position = lambda p, d: self._safe_emit(self.positionReceived, p, d)
+        self._player.on_state_change = lambda s: self._safe_emit(self.stateReceived, s)
+        self._player.on_error = lambda err: self._safe_emit(self.playerErrorReceived, err)
         app = QGuiApplication.instance()
         if app:
             app.paletteChanged.connect(
@@ -153,6 +166,14 @@ class SonoraBridge(QObject):
         self._start_glib_loop()
         self._set_busy(True)
         self._run(self._create_api, self._api_ready)
+
+    @staticmethod
+    def _safe_emit(signal, *args):
+        try:
+            signal.emit(*args)
+        except RuntimeError:
+            pass
+        return False
 
     def _start_glib_loop(self):
         from gi.repository import GLib
@@ -515,6 +536,12 @@ class SonoraBridge(QObject):
         self._lyrics_token += 1
         token = self._lyrics_token
 
+        def emit_lyrics(payload):
+            try:
+                self.lyricsReceived.emit(payload)
+            except RuntimeError:
+                pass
+
         def run():
             if token != self._lyrics_token:
                 return
@@ -525,7 +552,7 @@ class SonoraBridge(QObject):
                     if token != self._lyrics_token:
                         return
                     logger.info("Lyrics resolved from local cache for '%s'", title or video_id)
-                    self.lyricsReceived.emit(cached)
+                    emit_lyrics(cached)
                     return
 
                 # 2. Try YouTube Music if API is available
@@ -557,7 +584,7 @@ class SonoraBridge(QObject):
                     if token != self._lyrics_token:
                         return
                     logger.info("Lyrics resolved from YouTube Music (Synced) for '%s'", title or video_id)
-                    self.lyricsReceived.emit({
+                    emit_lyrics({
                         "loading": False,
                         "available": len(lines) > 0,
                         "hasTimestamps": True,
@@ -578,7 +605,7 @@ class SonoraBridge(QObject):
                             if token != self._lyrics_token:
                                 return
                             logger.info("Lyrics resolved from LRCLIB (Synced) for '%s'", title)
-                            self.lyricsReceived.emit({
+                            emit_lyrics({
                                 "loading": False,
                                 "available": True,
                                 "hasTimestamps": True,
@@ -629,7 +656,7 @@ class SonoraBridge(QObject):
                         if token != self._lyrics_token:
                             return
                         logger.info("Lyrics resolved from %s for '%s' (timed=%s)", source_label, title, has_timed)
-                        self.lyricsReceived.emit({
+                        emit_lyrics({
                             "loading": False,
                             "available": True,
                             "hasTimestamps": has_timed,
@@ -642,13 +669,11 @@ class SonoraBridge(QObject):
                 if token != self._lyrics_token:
                     return
                 logger.info("No lyrics available for '%s' (%s)", title, video_id)
-                self.lyricsReceived.emit({"loading": False, "available": False, "hasTimestamps": False, "lines": [], "source": ""})
+                emit_lyrics({"loading": False, "available": False, "hasTimestamps": False, "lines": [], "source": ""})
             except Exception as e:
                 logger.debug("Failed fetching lyrics: %s", e)
                 if token == self._lyrics_token:
-                    self.lyricsReceived.emit({"loading": False, "available": False, "hasTimestamps": False, "lines": [], "source": ""})
-
-        threading.Thread(target=run, daemon=True).start()
+                    emit_lyrics({"loading": False, "available": False, "hasTimestamps": False, "lines": [], "source": ""})
 
         threading.Thread(target=run, daemon=True).start()
 
@@ -864,8 +889,12 @@ class SonoraBridge(QObject):
         if self._loading:
             return
         if self._playing:
+            self._playing = False
+            self.playbackChanged.emit()
             self._player.pause()
         elif self._now_playing:
+            self._playing = True
+            self.playbackChanged.emit()
             self._player.play()
         elif self._queue:
             self._queue_index = max(0, self._queue_index)
@@ -901,6 +930,9 @@ class SonoraBridge(QObject):
             else:
                 self._queue_index = -1
                 self._now_playing = {}
+                self._set_dynamic_color("")
+                self._lyrics = {"loading": False, "available": False, "hasTimestamps": False, "lines": [], "source": ""}
+                self.lyricsChanged.emit()
                 self._player.stop()
                 self.nowPlayingChanged.emit()
         self.queueChanged.emit()
@@ -912,6 +944,7 @@ class SonoraBridge(QObject):
             index <= self._queue_index
             or target <= self._queue_index
             or index < 0
+            or index >= len(self._queue)
             or target >= len(self._queue)
         ):
             return
@@ -1074,7 +1107,7 @@ class SonoraBridge(QObject):
 
         self._loading = False
         self.playbackChanged.emit()
-        GLib.idle_add(self._player.play_uri, uri)
+        GLib.idle_add(lambda: (self._player.play_uri(uri), False)[1])
 
     @Slot(int, int)
     def _apply_position(self, position, duration):
@@ -1144,7 +1177,7 @@ class SonoraBridge(QObject):
 
     @Slot("QVariantMap")
     def likeSong(self, song):
-        if not self._api or not song.get("videoId"):
+        if not self.authenticated or not self._api or not song.get("videoId"):
             self.toast.emit("Sign in to like songs")
             return
         liked = not self._liked
@@ -1262,10 +1295,10 @@ class SonoraBridge(QObject):
             song.get("artist", ""),
             output_dir,
             audio_format,
-            on_progress=lambda progress: self.downloadProgressReceived.emit(
-                download_id, progress),
-            on_done=lambda path: self.downloadDoneReceived.emit(
-                download_id, path),
-            on_error=lambda message: self.downloadErrorReceived.emit(
-                download_id, message),
+            on_progress=lambda progress: self._safe_emit(
+                self.downloadProgressReceived, download_id, progress),
+            on_done=lambda path: self._safe_emit(
+                self.downloadDoneReceived, download_id, path),
+            on_error=lambda message: self._safe_emit(
+                self.downloadErrorReceived, download_id, message),
         )

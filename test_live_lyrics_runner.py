@@ -18,7 +18,7 @@ os.environ["QT_QPA_PLATFORM"] = "offscreen"
 os.environ["QSG_RHI_BACKEND"] = "opengl"
 os.environ["QSG_RENDER_LOOP"] = "threaded"
 
-sonora_dir = Path("/home/hoshirun/Sonora")
+sonora_dir = Path(__file__).resolve().parent
 sys.path.insert(0, str(sonora_dir))
 
 import gi

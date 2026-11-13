@@ -9,6 +9,19 @@ from gi.repository import GLib
 logger = logging.getLogger(__name__)
 
 
+def _idle_dispatch(callback, *args):
+    """Schedule a callback on the GLib main loop, ensuring False is returned so GLib removes the source."""
+    def _wrapper():
+        try:
+            callback(*args)
+        except RuntimeError:
+            pass
+        except Exception as exc:
+            logger.exception("Error in downloader GLib idle callback: %s", exc)
+        return False
+    GLib.idle_add(_wrapper)
+
+
 class Downloader:
     """
     Spawn one daemon thread per download.
@@ -43,14 +56,23 @@ class Downloader:
         url = f"https://music.youtube.com/watch?v={video_id}"
 
         safe = lambda s: "".join(c for c in s if c.isalnum() or c in " _-").strip()
-        name = f"{safe(artist)} - {safe(title)}" if artist else safe(title)
+        safe_title = safe(title)
+        safe_artist = safe(artist)
+        if safe_artist and safe_title:
+            name = f"{safe_artist} - {safe_title}"
+        elif safe_title:
+            name = safe_title
+        elif safe_artist:
+            name = safe_artist
+        else:
+            name = video_id or "track"
         template = str(out_dir / f"{name}.%(ext)s")
 
         def hook(d):
             if d["status"] == "downloading" and on_progress:
                 total = d.get("total_bytes") or d.get("total_bytes_estimate") or 1
                 pct   = int(d.get("downloaded_bytes", 0) / total * 100)
-                GLib.idle_add(on_progress, pct)
+                _idle_dispatch(on_progress, pct)
 
         ydl_opts = {
             "format":          "bestaudio/best",
@@ -79,8 +101,8 @@ class Downloader:
             path = str(out_dir / f"{name}.{audio_format}")
             logger.info("Download completed (video_id=%s, path=%s)", video_id, path)
             if on_done:
-                GLib.idle_add(on_done, path)
+                _idle_dispatch(on_done, path)
         except Exception as e:
             logger.exception("Download failed (video_id=%s)", video_id)
             if on_error:
-                GLib.idle_add(on_error, str(e))
+                _idle_dispatch(on_error, str(e))

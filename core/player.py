@@ -15,8 +15,23 @@ from gi.repository import Gst, GLib
 logger = logging.getLogger(__name__)
 
 
+def _idle_dispatch(callback, *args):
+    """Schedule a callback on the GLib main loop, ensuring False is returned so GLib removes the source."""
+    def _wrapper():
+        try:
+            callback(*args)
+        except RuntimeError:
+            pass
+        except Exception as exc:
+            logger.exception("Error in player GLib idle callback: %s", exc)
+        return False
+    GLib.idle_add(_wrapper)
+
+
 class Player:
     def __init__(self):
+        if not Gst.is_initialized():
+            Gst.init(None)
         self._pipeline = Gst.ElementFactory.make("playbin", "player")
         if not self._pipeline:
             raise RuntimeError(
@@ -112,11 +127,11 @@ class Player:
             logger.error("GStreamer playback error: %s", err)
             self._stop_timer()
             if self.on_error:
-                GLib.idle_add(self.on_error, str(err))
+                _idle_dispatch(self.on_error, str(err))
 
     def _emit_state(self, state: str):
         if self.on_state_change:
-            GLib.idle_add(self.on_state_change, state)
+            _idle_dispatch(self.on_state_change, state)
 
     def _start_timer(self):
         self._stop_timer()
