@@ -53,7 +53,11 @@ class StreamService:
                     return entry
 
         logger.info("Extracting stream URL for video_id=%s", video_id)
-        url = f"https://music.youtube.com/watch?v={video_id}"
+        if video_id.startswith("sc_"):
+            sc_id = video_id[3:]
+            url = f"https://api.soundcloud.com/tracks/{sc_id}"
+        else:
+            url = f"https://music.youtube.com/watch?v={video_id}"
         opts = self._get_ydl_opts()
 
         for attempt in range(1, 3):

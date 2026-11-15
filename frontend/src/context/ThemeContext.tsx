@@ -1,6 +1,13 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import {
+  ThemeStyle,
+  getStoredUiSettings,
+  saveUiSettings,
+  applyUiSettingsToDOM,
+  SETTINGS_CHANGED_EVENT,
+} from '../utils/settings';
 
-type Theme = 'dark' | 'light';
+export type Theme = ThemeStyle;
 
 interface ThemeContextType {
   theme: Theme;
@@ -15,29 +22,42 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const urlTheme = params.get('theme');
-      if (urlTheme === 'light' || urlTheme === 'dark') return urlTheme;
+      if (urlTheme === 'light' || urlTheme === 'dark' || urlTheme === 'amoled') {
+        return urlTheme as Theme;
+      }
     }
-    const saved = localStorage.getItem('sonora_theme');
-    return (saved === 'light' || saved === 'dark') ? saved : 'dark';
+    const ui = getStoredUiSettings();
+    return ui.theme || 'dark';
   });
 
+  // Apply UI settings including theme, accent, glass, motion to DOM on startup and change
   useEffect(() => {
-    const root = document.documentElement;
-    root.setAttribute('data-theme', theme);
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-    localStorage.setItem('sonora_theme', theme);
+    const currentUi = getStoredUiSettings();
+    const updated = { ...currentUi, theme };
+    applyUiSettingsToDOM(updated);
   }, [theme]);
 
+  // Listen to cross-component settings updates
+  useEffect(() => {
+    const handleSettingsChanged = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail?.type === 'ui' && customEvent.detail?.settings?.theme) {
+        setThemeState(customEvent.detail.settings.theme);
+      }
+    };
+    window.addEventListener(SETTINGS_CHANGED_EVENT, handleSettingsChanged);
+    return () => window.removeEventListener(SETTINGS_CHANGED_EVENT, handleSettingsChanged);
+  }, []);
+
   const toggleTheme = () => {
-    setThemeState((prev) => (prev === 'dark' ? 'light' : 'dark'));
+    const nextTheme: Theme = theme === 'light' ? 'dark' : 'light';
+    setThemeState(nextTheme);
+    saveUiSettings({ theme: nextTheme });
   };
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
+    saveUiSettings({ theme: newTheme });
   };
 
   return (

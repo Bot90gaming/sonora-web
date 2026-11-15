@@ -377,15 +377,7 @@ export const QueueDrawer: React.FC = () => {
                     {isCurrent && (
                       <div className="mt-1 flex items-center gap-1.5">
                         <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-m3-primary/15 text-m3-primary border border-m3-primary/35 shadow-[0_0_10px_rgba(59,130,246,0.3)]">
-                          {isPlaying ? (
-                            <span className="flex items-end justify-center gap-0.5 h-2.5 w-2.5">
-                              <span className="w-0.5 bg-m3-primary rounded-full animate-equalizer-1 h-full" />
-                              <span className="w-0.5 bg-m3-primary rounded-full animate-equalizer-2 h-full" />
-                              <span className="w-0.5 bg-m3-primary rounded-full animate-equalizer-3 h-full" />
-                            </span>
-                          ) : (
-                            <Sparkles className="w-2.5 h-2.5" />
-                          )}
+                          <Sparkles className={`w-2.5 h-2.5 ${isPlaying ? 'animate-pulse text-m3-primary' : ''}`} />
                           Now Playing
                         </span>
                       </div>

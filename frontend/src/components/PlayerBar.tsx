@@ -18,6 +18,11 @@ import {
 } from 'lucide-react';
 import { usePlayer } from '../context/PlayerContext';
 import { handleImageError } from '../services/api';
+import {
+  getStoredUiSettings,
+  SETTINGS_CHANGED_EVENT,
+  UiSettings,
+} from '../utils/settings';
 
 interface PlayerBarProps {
   onOpenDownloadModal?: () => void;
@@ -29,6 +34,265 @@ export function formatSeconds(secs: number): string {
   const s = Math.floor(secs % 60);
   return `${m}:${s < 10 ? '0' : ''}${s}`;
 }
+
+interface PlayerVisualizerProps {
+  isPlaying: boolean;
+  hasTrack: boolean;
+}
+
+const NUM_BARS = 48;
+
+export const PlayerVisualizerBackground: React.FC<PlayerVisualizerProps> = ({ isPlaying, hasTrack }) => {
+  const [uiSettings, setUiSettings] = useState<UiSettings>(getStoredUiSettings);
+
+  useEffect(() => {
+    const handleSettingsChanged = (e: Event) => {
+      const custom = e as CustomEvent;
+      if (custom.detail?.type === 'ui') {
+        setUiSettings(custom.detail.settings);
+      }
+    };
+    window.addEventListener(SETTINGS_CHANGED_EVENT, handleSettingsChanged);
+    return () => window.removeEventListener(SETTINGS_CHANGED_EVENT, handleSettingsChanged);
+  }, []);
+
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const animFrameRef = useRef<number | null>(null);
+  const currentHeightsRef = useRef<Float32Array>(new Float32Array(NUM_BARS));
+  const wavePhaseRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (!uiSettings.enableVisualizer) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let isActive = true;
+    const restingHeight = hasTrack ? 3 : 1;
+    let lastTime = performance.now();
+
+    const render = (now: number) => {
+      if (!isActive || !canvas) return;
+      const dt = Math.min(0.1, (now - lastTime) / 1000);
+      lastTime = now;
+
+      const rect = canvas.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+
+      if (width <= 0 || height <= 0) {
+        animFrameRef.current = requestAnimationFrame(render);
+        return;
+      }
+
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const targetWidth = Math.floor(width * dpr);
+      const targetHeightPx = Math.floor(height * dpr);
+
+      if (canvas.width !== targetWidth || canvas.height !== targetHeightPx) {
+        canvas.width = targetWidth;
+        canvas.height = targetHeightPx;
+      }
+
+      ctx.save();
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0, 0, width, height);
+
+      const t = now * 0.001;
+      if (isPlaying) {
+        wavePhaseRef.current += dt * (uiSettings.visualizerStyle === 'wave' ? 2.2 : 1.6);
+      }
+
+      // STYLE: Wave
+      if (uiSettings.visualizerStyle === 'wave') {
+        const wavePoints = 48;
+        const waveStep = width / wavePoints;
+
+        // Wave Layer 1
+        ctx.beginPath();
+        ctx.moveTo(0, height);
+        for (let p = 0; p <= wavePoints; p++) {
+          const wx = p * waveStep;
+          let wy = height;
+          if (isPlaying && hasTrack) {
+            const wAmp = height * 0.45;
+            const s1 = Math.sin(wavePhaseRef.current + p * 0.35) * 0.5 + 0.5;
+            const c1 = Math.cos(wavePhaseRef.current * 0.8 - p * 0.22) * 0.35;
+            wy = height - (wAmp * (s1 + c1) + 6);
+          } else {
+            wy = height - restingHeight - 2;
+          }
+          ctx.lineTo(wx, wy);
+        }
+        ctx.lineTo(width, height);
+        ctx.closePath();
+
+        const grad1 = ctx.createLinearGradient(0, height, 0, height * 0.2);
+        grad1.addColorStop(0, 'rgba(56, 189, 248, 0.45)');
+        grad1.addColorStop(0.5, 'rgba(99, 102, 241, 0.25)');
+        grad1.addColorStop(1, 'rgba(168, 85, 247, 0)');
+        ctx.fillStyle = grad1;
+        ctx.fill();
+
+        // Wave Layer 2 (Crest line)
+        ctx.beginPath();
+        for (let p = 0; p <= wavePoints; p++) {
+          const wx = p * waveStep;
+          let wy = height;
+          if (isPlaying && hasTrack) {
+            const wAmp = height * 0.35;
+            const s2 = Math.sin(wavePhaseRef.current * 1.3 - p * 0.4) * 0.5 + 0.5;
+            wy = height - (wAmp * s2 + 4);
+          } else {
+            wy = height - restingHeight;
+          }
+          if (p === 0) ctx.moveTo(wx, wy);
+          else ctx.lineTo(wx, wy);
+        }
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.65)';
+        ctx.lineWidth = 1.8;
+        ctx.stroke();
+
+        ctx.restore();
+        if (isPlaying) {
+          animFrameRef.current = requestAnimationFrame(render);
+        }
+        return;
+      }
+
+      // STYLE: Spectrum OR Minimal
+      const isMinimal = uiSettings.visualizerStyle === 'minimal';
+      const wavePoints = 32;
+      const waveStep = width / wavePoints;
+      ctx.beginPath();
+      ctx.moveTo(0, height);
+      for (let p = 0; p <= wavePoints; p++) {
+        const wx = p * waveStep;
+        let wy = height;
+        if (isPlaying && hasTrack) {
+          const wAmp = height * (isMinimal ? 0.12 : 0.24);
+          const wSin = Math.sin(wavePhaseRef.current + p * 0.42) * 0.5 + 0.5;
+          const wCos = Math.cos(wavePhaseRef.current * 0.7 - p * 0.28) * 0.3;
+          wy = height - (wAmp * (wSin + wCos) + 3);
+        } else {
+          wy = height - restingHeight - 1;
+        }
+        ctx.lineTo(wx, wy);
+      }
+      ctx.lineTo(width, height);
+      ctx.closePath();
+
+      const waveGrad = ctx.createLinearGradient(0, height, 0, height * 0.55);
+      waveGrad.addColorStop(0, 'rgba(59, 130, 246, 0.25)');
+      waveGrad.addColorStop(0.5, 'rgba(6, 182, 212, 0.14)');
+      waveGrad.addColorStop(1, 'rgba(99, 102, 241, 0)');
+      ctx.fillStyle = waveGrad;
+      ctx.fill();
+
+      // Equalizer bars
+      const currentHeights = currentHeightsRef.current;
+      let allSettled = true;
+
+      const step = width / (NUM_BARS + 1);
+      const barWidth = isMinimal
+        ? Math.max(1.5, Math.min(3, step * 0.25))
+        : Math.max(2, Math.min(5.5, step * 0.44));
+      const radius = barWidth / 2;
+
+      // Simulated acoustic beat rhythm (~124 BPM)
+      const beat = isPlaying ? Math.pow(Math.max(0, Math.sin(t * 3.8)), 4) * 0.32 : 0;
+
+      for (let i = 0; i < NUM_BARS; i++) {
+        let targetH = restingHeight;
+
+        if (isPlaying && hasTrack) {
+          const norm = i / NUM_BARS;
+          const bassBoost = norm < 0.25 ? (1 - norm * 3.2) * 0.3 : 0;
+          const f1 = Math.sin(t * 4.3 + i * 0.36) * 0.22;
+          const f2 = Math.cos(t * 2.8 - i * 0.24) * 0.18;
+          const f3 = Math.sin(t * 6.6 + i * 0.58) * 0.14;
+          const spectrumCurve = 0.55 + 0.45 * Math.sin(norm * Math.PI);
+
+          const energy = Math.max(
+            0.05,
+            Math.min(1, (0.32 + bassBoost + f1 + f2 + f3 + beat) * spectrumCurve)
+          );
+
+          const maxBarHeight = height * (isMinimal ? 0.38 : 0.68);
+          targetH = restingHeight + energy * (maxBarHeight - restingHeight);
+        }
+
+        const currentH = currentHeights[i];
+        const diff = targetH - currentH;
+        if (Math.abs(diff) > 0.12) {
+          allSettled = false;
+        }
+        currentHeights[i] += diff * 0.14;
+
+        const h = currentHeights[i];
+        if (h <= 0.5) continue;
+
+        const x = (i + 1) * step;
+        const y = height - h;
+
+        const barGrad = ctx.createLinearGradient(0, height, 0, y);
+        barGrad.addColorStop(0, 'rgba(59, 130, 246, 0.45)');
+        barGrad.addColorStop(0.5, 'rgba(6, 182, 212, 0.75)');
+        barGrad.addColorStop(1, 'rgba(165, 180, 252, 0.95)');
+
+        ctx.fillStyle = barGrad;
+        ctx.beginPath();
+        if (typeof ctx.roundRect === 'function') {
+          ctx.roundRect(x - barWidth / 2, y, barWidth, h, [radius, radius, 0, 0]);
+        } else {
+          ctx.rect(x - barWidth / 2, y, barWidth, h);
+        }
+        ctx.fill();
+      }
+
+      ctx.restore();
+
+      if (isPlaying || !allSettled) {
+        animFrameRef.current = requestAnimationFrame(render);
+      }
+    };
+
+    animFrameRef.current = requestAnimationFrame(render);
+
+    return () => {
+      isActive = false;
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current);
+      }
+    };
+  }, [isPlaying, hasTrack, uiSettings.enableVisualizer, uiSettings.visualizerStyle]);
+
+  if (!uiSettings.enableVisualizer) {
+    return null;
+  }
+
+  const opacityValue =
+    uiSettings.visualizerOpacity === 'subtle'
+      ? 0.15
+      : uiSettings.visualizerOpacity === 'vivid'
+      ? 0.40
+      : 0.25;
+
+  return (
+    <div
+      className="absolute inset-0 pointer-events-none overflow-hidden select-none z-0 transition-opacity duration-700"
+      style={{
+        opacity: opacityValue,
+        maskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.6) 45%, rgba(0,0,0,0) 88%)',
+        WebkitMaskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.6) 45%, rgba(0,0,0,0) 88%)',
+      }}
+      aria-hidden="true"
+    >
+      <canvas ref={canvasRef} className="w-full h-full block" />
+    </div>
+  );
+};
 
 export const PlayerBar: React.FC<PlayerBarProps> = ({ onOpenDownloadModal }) => {
   const {
@@ -215,44 +479,22 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({ onOpenDownloadModal }) => 
           85% { transform: scale(0.98); }
           100% { transform: scale(1) rotate(0deg); }
         }
-        @keyframes barPulse1 {
-          0%, 100% { height: 28%; }
-          50% { height: 95%; }
-        }
-        @keyframes barPulse2 {
-          0%, 100% { height: 90%; }
-          50% { height: 35%; }
-        }
-        @keyframes barPulse3 {
-          0%, 100% { height: 45%; }
-          50% { height: 100%; }
-        }
-        @keyframes barPulse4 {
-          0%, 100% { height: 85%; }
-          50% { height: 22%; }
-        }
-        @keyframes barPulse5 {
-          0%, 100% { height: 30%; }
-          50% { height: 80%; }
-        }
         .anim-heartbeat {
           animation: playerHeartbeat 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
-        .anim-bar-1 { animation: barPulse1 0.75s ease-in-out infinite; }
-        .anim-bar-2 { animation: barPulse2 0.95s ease-in-out infinite 0.15s; }
-        .anim-bar-3 { animation: barPulse3 0.82s ease-in-out infinite 0.3s; }
-        .anim-bar-4 { animation: barPulse4 1.05s ease-in-out infinite 0.05s; }
-        .anim-bar-5 { animation: barPulse5 0.88s ease-in-out infinite 0.22s; }
       `}</style>
 
       <footer className="h-24 px-4 sm:px-6 md:px-8 border-t border-white/[0.08] dark:border-white/[0.07] bg-m3-surface-container-low/85 dark:bg-[#0c101a]/85 backdrop-blur-2xl flex items-center justify-between z-40 relative select-none shadow-[0_-4px_30px_rgba(0,0,0,0.15)] dark:shadow-[0_-8px_32px_rgba(0,0,0,0.4)]">
+        {/* Full-width Ambient Audio Visualizer in PlayerBar Background */}
+        <PlayerVisualizerBackground isPlaying={isPlaying} hasTrack={!!currentTrack} />
+
         {/* Subtle Ambient Laser Edge Glow at top of Player Bar */}
-        <div className="absolute inset-x-0 -top-px h-[1.5px] bg-gradient-to-r from-transparent via-blue-500/40 dark:via-blue-400/50 to-transparent pointer-events-none" />
+        <div className="absolute inset-x-0 -top-px h-[1.5px] bg-gradient-to-r from-transparent via-blue-500/40 dark:via-blue-400/50 to-transparent pointer-events-none z-10" />
         
         {/* Subtle ambient light gradient sheen */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.03] to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.03] to-transparent pointer-events-none z-10" />
 
-        {/* ──────────────── Left Section: Current Song Info & Equalizer ──────────────── */}
+        {/* ──────────────── Left Section: Current Song Info ──────────────── */}
         <div className="flex items-center gap-3 sm:gap-4 w-1/4 min-w-[200px] lg:min-w-[260px] z-10">
           {currentTrack ? (
             <>
@@ -272,19 +514,10 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({ onOpenDownloadModal }) => 
                     onError={(e) => handleImageError(e, currentTrack?.id)}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
-                  {/* Subtle glass overlay with animated mini equalizer when playing */}
-                  {isPlaying && (
-                    <div className="absolute inset-0 bg-black/45 backdrop-blur-[1px] flex items-center justify-center gap-0.5 transition-all">
-                      <div className="w-[3px] bg-cyan-300 anim-bar-1 rounded-full h-4 shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
-                      <div className="w-[3px] bg-blue-400 anim-bar-2 rounded-full h-5 shadow-[0_0_6px_rgba(96,165,250,0.8)]" />
-                      <div className="w-[3px] bg-indigo-300 anim-bar-3 rounded-full h-3 shadow-[0_0_6px_rgba(165,180,252,0.8)]" />
-                      <div className="w-[3px] bg-cyan-400 anim-bar-4 rounded-full h-4 shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
-                    </div>
-                  )}
                 </div>
               </div>
 
-              {/* Title, Artist & Next-To-Art Equalizer Badge */}
+              {/* Title & Artist */}
               <div className="flex flex-col min-w-0 pr-1 sm:pr-2">
                 <div className="flex items-center gap-2">
                   <span 
@@ -293,20 +526,6 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({ onOpenDownloadModal }) => 
                   >
                     {currentTrack.title}
                   </span>
-                  
-                  {/* Animated Equalizer soundwave badge next to track info */}
-                  {isPlaying ? (
-                    <div 
-                      className="flex items-end gap-[2px] h-3.5 px-1.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 shrink-0" 
-                      title="Now playing live stream"
-                    >
-                      <span className="w-[2px] rounded-full bg-gradient-to-t from-blue-500 to-cyan-400 anim-bar-1" />
-                      <span className="w-[2px] rounded-full bg-gradient-to-t from-blue-500 to-cyan-400 anim-bar-2" />
-                      <span className="w-[2px] rounded-full bg-gradient-to-t from-blue-500 to-cyan-400 anim-bar-3" />
-                      <span className="w-[2px] rounded-full bg-gradient-to-t from-blue-500 to-cyan-400 anim-bar-4" />
-                      <span className="w-[2px] rounded-full bg-gradient-to-t from-blue-500 to-cyan-400 anim-bar-5 hidden sm:inline-block" />
-                    </div>
-                  ) : null}
                 </div>
 
                 <span 

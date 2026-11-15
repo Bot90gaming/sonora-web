@@ -1,4 +1,4 @@
-import { Track, Album, Playlist, SearchResults, LyricLine, SearchFilter } from '../types';
+import { Track, Album, Playlist, SearchResults, LyricLine, SearchFilter, SearchSource, AuthStatus, HomeSection } from '../types';
 
 const API_BASE = '/api';
 
@@ -234,15 +234,84 @@ export const SAMPLE_LRC = `[00:00.00] Sonora Synchronized Lyrics
 
 class ApiService {
   /**
-   * Search YouTube Music via Sonora backend
+   * Fetch personalized / trending home feed sections directly from YouTube Music
    */
-  async search(query: string, filter: SearchFilter = 'all'): Promise<SearchResults> {
+  async getHome(limit = 10): Promise<HomeSection[]> {
+    try {
+      const res = await fetch(`${API_BASE}/home?limit=${limit}`);
+      if (res.ok) {
+        const data = await res.json();
+        const rawSections = data.sections || [];
+        return rawSections
+          .filter((sec: any) => sec && Array.isArray(sec.contents) && sec.contents.length > 0)
+          .map((sec: any) => {
+            const contents = sec.contents.map((item: any) => {
+              const videoId = item.videoId || (item.type === 'song' ? item.id : null);
+              if (videoId) {
+                return {
+                  id: videoId,
+                  title: item.title,
+                  artist: item.artist || (item.artists && item.artists[0]?.name) || 'YouTube Music',
+                  album: item.album?.name || item.album || '',
+                  duration: item.duration_seconds || item.duration || 180,
+                  durationFormatted: item.durationFormatted || (item.duration ? (typeof item.duration === 'string' ? item.duration : `${Math.floor(item.duration / 60)}:${(item.duration % 60).toString().padStart(2, '0')}`) : '3:00'),
+                  thumbnail: item.thumbnail || (item.thumbnails?.[item.thumbnails.length - 1]?.url) || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+                } as Track;
+              }
+
+              // Check if playlist
+              if (item.playlistId || item.itemCount || (item.thumbnails && !item.artists && !item.year)) {
+                return {
+                  id: item.playlistId || item.browseId || item.id,
+                  title: item.title,
+                  description: item.description || (item.author ? (typeof item.author === 'string' ? item.author : item.author[0]?.name) : 'YouTube Playlist'),
+                  thumbnail: item.thumbnail || (item.thumbnails?.[item.thumbnails.length - 1]?.url) || '',
+                  trackCount: item.count ? parseInt(item.count, 10) : (item.itemCount ? parseInt(item.itemCount, 10) : 0),
+                } as Playlist;
+              }
+
+              // Check if album
+              if (item.browseId || item.year) {
+                return {
+                  id: item.browseId || item.id,
+                  title: item.title,
+                  artist: item.artist || (item.artists && item.artists[0]?.name) || 'Various Artists',
+                  year: item.year || '',
+                  thumbnail: item.thumbnail || (item.thumbnails?.[item.thumbnails.length - 1]?.url) || '',
+                } as Album;
+              }
+
+              // Default fallback as Track if has title
+              return {
+                id: item.id || '',
+                title: item.title,
+                artist: item.artist || 'YouTube Music',
+                thumbnail: item.thumbnail || (item.thumbnails?.[item.thumbnails.length - 1]?.url) || '',
+              } as Track;
+            });
+
+            return {
+              title: sec.title || 'Recommended',
+              contents,
+            };
+          });
+      }
+    } catch (err) {
+      console.warn('Failed to fetch home feed from backend:', err);
+    }
+    return [];
+  }
+
+  /**
+   * Search music across providers (YouTube Music, SoundCloud, All) via Sonora backend
+   */
+  async search(query: string, filter: SearchFilter = 'all', source: SearchSource = 'all'): Promise<SearchResults> {
     if (!query.trim()) {
       return { query: '', songs: [], albums: [], artists: [], playlists: [] };
     }
 
     try {
-      const response = await fetch(`${API_BASE}/search?q=${encodeURIComponent(query)}&filter=${filter}`);
+      const response = await fetch(`${API_BASE}/search?q=${encodeURIComponent(query)}&filter=${filter}&source=${source}`);
       if (response.ok) {
         const data = await response.json();
         return this.normalizeSearchResults(query, data);
@@ -518,6 +587,7 @@ class ApiService {
           item.thumbnails?.[item.thumbnails.length - 1]?.url ||
           item.thumbnail ||
           (videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : ''),
+        source: item.source || (videoId?.startsWith('sc_') ? 'soundcloud' : 'ytmusic'),
       };
     });
 
@@ -546,6 +616,148 @@ class ApiService {
     }));
 
     return { query, songs, albums, artists, playlists };
+  }
+
+  // ── Authentication ────────────────────────────────────────────────────────
+
+  async getAuthStatus(): Promise<AuthStatus> {
+    try {
+      const res = await fetch(`${API_BASE}/auth/status`);
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch {
+      // Offline fallback
+    }
+    return { authenticated: false, authType: 'none', canGoogleSignIn: false };
+  }
+
+  async loginWithHeaders(headers: string): Promise<{ success: boolean; authenticated: boolean }> {
+    const res = await fetch(`${API_BASE}/auth/headers`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ headers }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Failed to authenticate with provided headers');
+    }
+    return await res.json();
+  }
+
+  async startOAuth(clientId?: string, clientSecret?: string): Promise<{
+    verification_url: string;
+    user_code: string;
+    device_code: string;
+    expires_in: number;
+    interval: number;
+  }> {
+    const res = await fetch(`${API_BASE}/auth/oauth/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ client_id: clientId, client_secret: clientSecret }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Failed to start Google OAuth');
+    }
+    return await res.json();
+  }
+
+  async pollOAuth(deviceCode: string): Promise<{
+    status: 'pending' | 'success' | 'error';
+    error?: string;
+    authenticated?: boolean;
+    slow_down?: boolean;
+  }> {
+    const res = await fetch(`${API_BASE}/auth/oauth/poll`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ device_code: deviceCode }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Error polling OAuth status');
+    }
+    return await res.json();
+  }
+
+  async logout(): Promise<{ success: boolean; authenticated: boolean }> {
+    const res = await fetch(`${API_BASE}/auth/logout`, { method: 'POST' });
+    if (!res.ok) {
+      throw new Error('Failed to log out');
+    }
+    return await res.json();
+  }
+
+  // ── User Library Sync ──────────────────────────────────────────────────────
+
+  async getLibraryLikedSongs(limit = 100): Promise<Track[]> {
+    try {
+      const res = await fetch(`${API_BASE}/library/liked?limit=${limit}`);
+      if (res.ok) {
+        const data = await res.json();
+        const rawTracks = data.tracks || [];
+        return rawTracks.map((item: any) => ({
+          id: item.videoId || item.id,
+          title: item.title,
+          artist: item.artist || (item.artists && item.artists[0]?.name) || 'Unknown Artist',
+          album: item.album?.name || item.album || '',
+          duration: item.duration_seconds || item.duration || 180,
+          durationFormatted: item.duration || '3:00',
+          thumbnail:
+            item.thumbnails?.[item.thumbnails.length - 1]?.url ||
+            item.thumbnail ||
+            `https://i.ytimg.com/vi/${item.videoId || item.id}/hqdefault.jpg`,
+          isLiked: true,
+        }));
+      }
+    } catch {
+      // Ignore
+    }
+    return [];
+  }
+
+  async getLibraryPlaylists(): Promise<Playlist[]> {
+    try {
+      const res = await fetch(`${API_BASE}/library/playlists`);
+      if (res.ok) {
+        const data = await res.json();
+        const raw = data.playlists || [];
+        return raw.map((p: any) => ({
+          id: p.playlistId || p.browseId || p.id,
+          title: p.title,
+          description: p.description || '',
+          author: p.author || 'You',
+          thumbnail: p.thumbnails?.[p.thumbnails.length - 1]?.url || p.thumbnail || '',
+          trackCount: p.count || p.itemCount || 0,
+        }));
+      }
+    } catch {
+      // Ignore
+    }
+    return [];
+  }
+
+  async getLibraryAlbums(): Promise<Album[]> {
+    try {
+      const res = await fetch(`${API_BASE}/library/albums`);
+      if (res.ok) {
+        const data = await res.json();
+        const raw = data.albums || [];
+        return raw.map((a: any) => ({
+          id: a.browseId || a.id,
+          title: a.title,
+          artist: a.artists?.[0]?.name || a.artist || 'Unknown Artist',
+          year: a.year || '',
+          thumbnail: a.thumbnails?.[a.thumbnails.length - 1]?.url || a.thumbnail || '',
+          trackCount: a.trackCount || 0,
+        }));
+      }
+    } catch {
+      // Ignore
+    }
+    return [];
   }
 
   private clientSideSearchFallback(query: string, filter: SearchFilter): SearchResults {

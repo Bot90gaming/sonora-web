@@ -1,17 +1,29 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Sun, Moon, Settings, X, Music } from 'lucide-react';
+import { Search, Sun, Moon, Settings, X, Music, RotateCw } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { api } from '../services/api';
+import { AuthStatus } from '../types';
 
 interface HeaderProps {
   onSearch: (query: string) => void;
   onOpenSettings: () => void;
+  onOpenAuth?: () => void;
+  onReload?: () => void;
+  authStatus?: AuthStatus;
   searchQuery: string;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onSearch, onOpenSettings, searchQuery }) => {
+export const Header: React.FC<HeaderProps> = ({
+  onSearch,
+  onOpenSettings,
+  onOpenAuth,
+  onReload,
+  authStatus,
+  searchQuery,
+}) => {
   const { theme, toggleTheme } = useTheme();
   const [inputValue, setInputValue] = useState(searchQuery);
+  const [isReloading, setIsReloading] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
@@ -238,6 +250,34 @@ export const Header: React.FC<HeaderProps> = ({ onSearch, onOpenSettings, search
 
       {/* Header Actions */}
       <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+        {/* YouTube Account / Sign-In Button */}
+        {onOpenAuth && (
+          authStatus?.authenticated ? (
+            <button
+              onClick={onOpenAuth}
+              title="YouTube Account (Connected) - Click to manage"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-m3-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-semibold transition-all shadow-xs active:scale-95 group"
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <svg className="w-3.5 h-3.5 fill-red-500" viewBox="0 0 24 24">
+                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+              </svg>
+              <span className="hidden sm:inline">Connected</span>
+            </button>
+          ) : (
+            <button
+              onClick={onOpenAuth}
+              title="Sign in with YouTube Music"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-m3-full bg-red-600/15 hover:bg-red-600/25 text-red-400 hover:text-red-300 border border-red-500/30 text-xs font-bold transition-all shadow-xs active:scale-95 group"
+            >
+              <svg className="w-3.5 h-3.5 fill-red-500 group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
+                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+              </svg>
+              <span className="hidden sm:inline">Sign In</span>
+            </button>
+          )
+        )}
+
         {/* Sonora Status Pill */}
         <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-m3-full bg-m3-surface-container-high/70 border border-m3-outline-variant/20 text-xs text-m3-on-surface-variant font-medium select-none shadow-xs">
           <span className="relative flex h-2 w-2">
@@ -268,6 +308,29 @@ export const Header: React.FC<HeaderProps> = ({ onSearch, onOpenSettings, search
               theme === 'light'
                 ? 'rotate-0 scale-100 opacity-100'
                 : 'rotate-90 scale-0 opacity-0 pointer-events-none'
+            }`}
+          />
+        </button>
+
+        {/* Reload / Refresh Button with Spin Animation */}
+        <button
+          onClick={() => {
+            setIsReloading(true);
+            setTimeout(() => {
+              if (onReload) {
+                onReload();
+              } else {
+                window.location.reload();
+              }
+            }, 250);
+          }}
+          title="Reload Sonora (Refresh content)"
+          aria-label="Reload application"
+          className="relative w-10 h-10 rounded-m3-full flex items-center justify-center bg-m3-surface-container-high/60 hover:bg-m3-surface-container-highest border border-m3-outline-variant/25 transition-all duration-300 hover:scale-105 active:scale-95 shadow-xs group focus:outline-none focus:ring-2 focus:ring-m3-primary/30"
+        >
+          <RotateCw
+            className={`w-4 h-4 text-m3-on-surface-variant group-hover:text-m3-primary transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
+              isReloading ? 'animate-spin text-m3-primary' : 'group-hover:rotate-180'
             }`}
           />
         </button>

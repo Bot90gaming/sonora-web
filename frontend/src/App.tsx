@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Sidebar, NavTab } from './components/Sidebar';
 import { Header } from './components/Header';
 import { PlayerBar } from './components/PlayerBar';
@@ -6,17 +6,19 @@ import { LyricsView } from './components/LyricsView';
 import { QueueDrawer } from './components/QueueDrawer';
 import { SettingsModal } from './components/SettingsModal';
 import { DownloadModal } from './components/DownloadModal';
+import { YouTubeAuthModal } from './components/YouTubeAuthModal';
 import { OpeningAnimation } from './components/OpeningAnimation';
 
 import { HomeView } from './views/HomeView';
 import { SearchView } from './views/SearchView';
 import { DetailView } from './views/DetailView';
 import { LibraryView } from './views/LibraryView';
+import { PlaylistsView } from './views/PlaylistsView';
 import { DownloadsView } from './views/DownloadsView';
 
 import { usePlayer } from './context/PlayerContext';
-import { Album, Playlist, Track } from './types';
-import { SAMPLE_PLAYLISTS, handleImageError } from './services/api';
+import { Album, Playlist, Track, AuthStatus } from './types';
+import { api } from './services/api';
 
 export const App: React.FC = () => {
   const { isLyricsOpen, isQueueOpen, currentTrack } = usePlayer();
@@ -34,6 +36,25 @@ export const App: React.FC = () => {
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(initialSettings);
   const [downloadModalTrack, setDownloadModalTrack] = useState<Track | null>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authStatus, setAuthStatus] = useState<AuthStatus>({
+    authenticated: false,
+    authType: 'none',
+    canGoogleSignIn: false,
+  });
+
+  const checkAuth = useCallback(async () => {
+    try {
+      const status = await api.getAuthStatus();
+      setAuthStatus(status);
+    } catch {
+      // offline
+    }
+  }, []);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   // Cinematic opening animation control
   const [showIntro, setShowIntro] = useState<boolean>(() => {
@@ -95,6 +116,8 @@ export const App: React.FC = () => {
       <Sidebar
         currentTab={currentTab}
         onSelectTab={handleSelectTab}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
+        authStatus={authStatus}
       />
 
       {/* Main Content Area */}
@@ -103,6 +126,9 @@ export const App: React.FC = () => {
         <Header
           onSearch={handleSearch}
           onOpenSettings={() => setIsSettingsOpen(true)}
+          onOpenAuth={() => setIsAuthModalOpen(true)}
+          onReload={() => window.location.reload()}
+          authStatus={authStatus}
           searchQuery={searchQuery}
         />
 
@@ -124,6 +150,8 @@ export const App: React.FC = () => {
                 onSelectAlbum={handleSelectAlbum}
                 onSelectPlaylist={handleSelectPlaylist}
                 onOpenDownload={handleOpenDownload}
+                onOpenAuth={() => setIsAuthModalOpen(true)}
+                authStatus={authStatus}
               />
             ) : currentTab === 'search' ? (
               <SearchView
@@ -134,42 +162,18 @@ export const App: React.FC = () => {
               />
             ) : currentTab === 'library' || currentTab === 'liked' ? (
               <LibraryView
+                onOpenDownload={handleOpenDownload}
                 onSelectAlbum={handleSelectAlbum}
                 onSelectPlaylist={handleSelectPlaylist}
-                onOpenDownload={handleOpenDownload}
+                onOpenAuth={() => setIsAuthModalOpen(true)}
+                authStatus={authStatus}
               />
             ) : currentTab === 'playlists' ? (
-              <div className="p-6 lg:p-8 space-y-6 max-w-7xl mx-auto pb-16">
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-m3-on-surface tracking-tight">
-                  Playlists & Mixes
-                </h1>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                  {SAMPLE_PLAYLISTS.map((playlist) => (
-                    <div
-                      key={playlist.id}
-                      onClick={() => handleSelectPlaylist(playlist)}
-                      className="group p-4 rounded-m3-lg bg-m3-surface-container/60 hover:bg-m3-surface-container border border-m3-outline-variant/20 hover:border-m3-primary/30 card-hover-elevate cursor-pointer flex flex-col space-y-3"
-                    >
-                      <div className="relative aspect-square w-full rounded-m3-md overflow-hidden bg-m3-surface-container-high shadow-md">
-                        <img
-                          src={playlist.thumbnail}
-                          alt={playlist.title}
-                          onError={(e) => handleImageError(e, playlist.tracks?.[0]?.id)}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-m3-on-surface truncate group-hover:text-m3-primary transition-colors">
-                          {playlist.title}
-                        </p>
-                        <p className="text-xs text-m3-on-surface-variant line-clamp-2">
-                          {playlist.description}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <PlaylistsView
+                onSelectPlaylist={handleSelectPlaylist}
+                onOpenAuth={() => setIsAuthModalOpen(true)}
+                authStatus={authStatus}
+              />
             ) : currentTab === 'downloads' ? (
               <DownloadsView />
             ) : null}
@@ -194,6 +198,11 @@ export const App: React.FC = () => {
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
+        onOpenAuth={() => {
+          setIsSettingsOpen(false);
+          setIsAuthModalOpen(true);
+        }}
+        authStatus={authStatus}
       />
 
       {/* Download Audio Modal */}
@@ -201,6 +210,13 @@ export const App: React.FC = () => {
         track={downloadModalTrack}
         isOpen={!!downloadModalTrack}
         onClose={() => setDownloadModalTrack(null)}
+      />
+
+      {/* YouTube Music Authentication Modal */}
+      <YouTubeAuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onAuthChange={checkAuth}
       />
     </div>
   );

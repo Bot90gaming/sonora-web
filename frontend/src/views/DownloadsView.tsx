@@ -1,10 +1,10 @@
 import React from 'react';
 import { Download, CheckCircle2, Play, Trash2, HardDrive, RefreshCw } from 'lucide-react';
 import { usePlayer } from '../context/PlayerContext';
-import { SAMPLE_TRACKS, handleImageError } from '../services/api';
+import { handleImageError } from '../services/api';
 
 export const DownloadsView: React.FC = () => {
-  const { downloads, removeDownload, playTrack, addDownload } = usePlayer();
+  const { downloads, removeDownload, playTrack } = usePlayer();
 
   const activeDownloads = downloads.filter((d) => d.status === 'downloading' || d.status === 'pending');
   const completedDownloads = downloads.filter((d) => d.status === 'completed');
@@ -21,16 +21,6 @@ export const DownloadsView: React.FC = () => {
           <p className="text-xs sm:text-sm text-m3-on-surface-variant mt-1">
             Offline media library powered by yt-dlp & FFmpeg engine
           </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => addDownload(SAMPLE_TRACKS[1], 'opus')}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-m3-full bg-m3-surface-container-high hover:bg-m3-surface-container-highest text-xs font-semibold text-m3-on-surface border border-m3-outline-variant/30 transition-colors"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Test Download (Opus)</span>
-          </button>
         </div>
       </div>
 

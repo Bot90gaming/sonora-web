@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Play, Heart, Plus, Download, Search, Disc, ListMusic, User } from 'lucide-react';
-import { Track, Album, Playlist, SearchResults, SearchFilter } from '../types';
-import { api, SAMPLE_TRACKS, SAMPLE_ALBUMS, handleImageError } from '../services/api';
+import { Track, Album, Playlist, SearchResults, SearchFilter, SearchSource } from '../types';
+import { api, handleImageError } from '../services/api';
 import { usePlayer } from '../context/PlayerContext';
 
 interface SearchViewProps {
@@ -19,28 +19,15 @@ export const SearchView: React.FC<SearchViewProps> = ({
 }) => {
   const { playTrack, toggleLike, isLiked, addToQueue } = usePlayer();
   const [filter, setFilter] = useState<SearchFilter>('all');
+  const [source, setSource] = useState<SearchSource>('all');
   const [query, setQuery] = useState(initialQuery);
-  const [results, setResults] = useState<SearchResults>(() => {
-    if (initialQuery.toLowerCase().includes('queen')) {
-      const q = initialQuery.toLowerCase();
-      const songs = SAMPLE_TRACKS.filter(t => t.artist.toLowerCase().includes(q) || t.title.toLowerCase().includes(q));
-      const albums = SAMPLE_ALBUMS.filter(a => a.artist.toLowerCase().includes(q) || a.title.toLowerCase().includes(q));
-      return {
-        query: initialQuery,
-        songs: songs.length ? songs : [SAMPLE_TRACKS[0]],
-        albums: albums.length ? albums : [SAMPLE_ALBUMS[0]],
-        artists: [{ id: 'artist-queen', name: 'Queen', thumbnail: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80', subscribers: '18.4M subscribers' }],
-        playlists: [],
-      };
-    }
-    return {
-      query: '',
-      songs: [],
-      albums: [],
-      artists: [],
-      playlists: [],
-    };
-  });
+  const [results, setResults] = useState<SearchResults>(() => ({
+    query: '',
+    songs: [],
+    albums: [],
+    artists: [],
+    playlists: [],
+  }));
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -54,7 +41,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
       const q = query.trim() || 'top hits';
       setLoading(true);
       try {
-        const res = await api.search(q, filter);
+        const res = await api.search(q, filter, source);
         if (!isCancelled) {
           setResults(res);
         }
@@ -71,7 +58,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
     return () => {
       isCancelled = true;
     };
-  }, [query, filter]);
+  }, [query, filter, source]);
 
   const filterChips: { id: SearchFilter; label: string }[] = [
     { id: 'all', label: 'All Results' },
@@ -79,6 +66,12 @@ export const SearchView: React.FC<SearchViewProps> = ({
     { id: 'albums', label: 'Albums' },
     { id: 'artists', label: 'Artists' },
     { id: 'playlists', label: 'Playlists' },
+  ];
+
+  const sourceChips: { id: SearchSource; label: string; icon: string }[] = [
+    { id: 'all', label: 'All Sources', icon: '🌐' },
+    { id: 'ytmusic', label: 'YouTube Music', icon: '▶️' },
+    { id: 'soundcloud', label: 'SoundCloud', icon: '☁️' },
   ];
 
   return (
@@ -90,6 +83,27 @@ export const SearchView: React.FC<SearchViewProps> = ({
           <h1 className="text-2xl sm:text-3xl font-extrabold text-m3-on-surface tracking-tight">
             {query ? `Search results for "${query}"` : 'Browse & Search Music'}
           </h1>
+        </div>
+
+        {/* Source Switcher */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <span className="text-xs font-bold uppercase tracking-wider text-m3-on-surface-variant mr-1">
+            Source:
+          </span>
+          {sourceChips.map((s) => (
+            <button
+              key={s.id}
+              onClick={() => setSource(s.id)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-m3-full text-xs font-bold transition-all ${
+                source === s.id
+                  ? 'bg-m3-primary text-m3-on-primary shadow-sm'
+                  : 'bg-m3-surface-container text-m3-on-surface-variant hover:text-m3-on-surface hover:bg-m3-surface-container-high'
+              }`}
+            >
+              <span>{s.icon}</span>
+              <span>{s.label}</span>
+            </button>
+          ))}
         </div>
 
         {/* Filter Chips Bar */}
@@ -161,9 +175,20 @@ export const SearchView: React.FC<SearchViewProps> = ({
                         onClick={() => playTrack(song, results.songs)}
                         className="flex-1 min-w-0 cursor-pointer"
                       >
-                        <p className="text-sm font-bold text-m3-on-surface truncate group-hover:text-m3-primary transition-colors">
-                          {song.title}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-bold text-m3-on-surface truncate group-hover:text-m3-primary transition-colors">
+                            {song.title}
+                          </p>
+                          {song.source === 'soundcloud' ? (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-orange-500/15 text-orange-400 border border-orange-500/30 shrink-0">
+                              SoundCloud
+                            </span>
+                          ) : (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-sky-500/15 text-sky-400 border border-sky-400/30 shrink-0">
+                              YT Music
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-m3-on-surface-variant truncate">
                           {song.artist} {song.album ? `• ${song.album}` : ''}
                         </p>

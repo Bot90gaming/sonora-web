@@ -189,6 +189,170 @@
   --md-sys-color-shadow-rgb: 0 0 0;
 }
 
+[data-theme='amoled'] {
+  /* Seed */
+  --md-sys-color-seed: #38BDF8;
+
+  /* Primary */
+  --md-sys-color-primary: #38BDF8;
+  --md-sys-color-primary-rgb: 56 189 248;
+  --md-sys-color-onPrimary: #000000;
+  --md-sys-color-onPrimary-rgb: 0 0 0;
+  --md-sys-color-primaryContainer: #082F49;
+  --md-sys-color-primaryContainer-rgb: 8 47 73;
+  --md-sys-color-onPrimaryContainer: #E0F2FE;
+  --md-sys-color-onPrimaryContainer-rgb: 224 242 254;
+  --md-sys-color-inversePrimary: #0284C7;
+  --md-sys-color-inversePrimary-rgb: 2 132 199;
+
+  /* Surfaces & Containers (Pure AMOLED Pitch Black #000000) */
+  --md-sys-color-surface: #000000;
+  --md-sys-color-surface-rgb: 0 0 0;
+  --md-sys-color-surfaceDim: #000000;
+  --md-sys-color-surfaceDim-rgb: 0 0 0;
+  --md-sys-color-surfaceBright: #111115;
+  --md-sys-color-surfaceBright-rgb: 17 17 21;
+  --md-sys-color-surfaceContainerLowest: #000000;
+  --md-sys-color-surfaceContainerLowest-rgb: 0 0 0;
+  --md-sys-color-surfaceContainerLow: #050507;
+  --md-sys-color-surfaceContainerLow-rgb: 5 5 7;
+  --md-sys-color-surfaceContainer: #09090D;
+  --md-sys-color-surfaceContainer-rgb: 9 9 13;
+  --md-sys-color-surfaceContainerHigh: #101016;
+  --md-sys-color-surfaceContainerHigh-rgb: 16 16 22;
+  --md-sys-color-surfaceContainerHighest: #181822;
+  --md-sys-color-surfaceContainerHighest-rgb: 24 24 34;
+  --md-sys-color-surfaceVariant: #20202C;
+  --md-sys-color-surfaceVariant-rgb: 32 32 44;
+
+  /* Typography */
+  --md-sys-color-onSurface: #FFFFFF;
+  --md-sys-color-onSurface-rgb: 255 255 255;
+  --md-sys-color-onSurfaceVariant: #A1A1AA;
+  --md-sys-color-onSurfaceVariant-rgb: 161 161 170;
+  --md-sys-color-inverseSurface: #FFFFFF;
+  --md-sys-color-inverseSurface-rgb: 255 255 255;
+  --md-sys-color-inverseOnSurface: #000000;
+  --md-sys-color-inverseOnSurface-rgb: 0 0 0;
+
+  /* Outlines & Elevation */
+  --md-sys-color-outline: #3F3F46;
+  --md-sys-color-outline-rgb: 63 63 70;
+  --md-sys-color-outlineVariant: #18181B;
+  --md-sys-color-outlineVariant-rgb: 24 24 27;
+  --md-sys-color-scrim: #000000;
+  --md-sys-color-scrim-rgb: 0 0 0;
+  --md-sys-color-shadow: rgba(0, 0, 0, 0.95);
+  --md-sys-color-shadow-rgb: 0 0 0;
+}
+
+[data-theme='amoled'] .glass-panel {
+  background: rgba(0, 0, 0, 0.94);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ACCENT COLOR OVERRIDES
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Electric Purple */
+[data-accent='purple'] {
+  --md-sys-color-primary: #A855F7;
+  --md-sys-color-primary-rgb: 168 85 247;
+  --md-sys-color-primaryContainer: #3B1C6E;
+  --md-sys-color-primaryContainer-rgb: 59 28 110;
+  --md-sys-color-onPrimaryContainer: #F3E8FF;
+  --md-sys-color-onPrimaryContainer-rgb: 243 232 255;
+  --md-sys-color-inversePrimary: #7C3AED;
+  --md-sys-color-inversePrimary-rgb: 124 58 237;
+}
+
+/* Rose Pink */
+[data-accent='rose'] {
+  --md-sys-color-primary: #F43F5E;
+  --md-sys-color-primary-rgb: 244 63 94;
+  --md-sys-color-primaryContainer: #881337;
+  --md-sys-color-primaryContainer-rgb: 136 19 55;
+  --md-sys-color-onPrimaryContainer: #FFE4E6;
+  --md-sys-color-onPrimaryContainer-rgb: 255 228 230;
+  --md-sys-color-inversePrimary: #E11D48;
+  --md-sys-color-inversePrimary-rgb: 225 29 72;
+}
+
+/* Emerald Green */
+[data-accent='emerald'] {
+  --md-sys-color-primary: #10B981;
+  --md-sys-color-primary-rgb: 16 185 129;
+  --md-sys-color-primaryContainer: #064E3B;
+  --md-sys-color-primaryContainer-rgb: 6 78 59;
+  --md-sys-color-onPrimaryContainer: #D1FAE5;
+  --md-sys-color-onPrimaryContainer-rgb: 209 250 229;
+  --md-sys-color-inversePrimary: #059669;
+  --md-sys-color-inversePrimary-rgb: 5 150 105;
+}
+
+/* Sunset Amber */
+[data-accent='amber'] {
+  --md-sys-color-primary: #F59E0B;
+  --md-sys-color-primary-rgb: 245 158 11;
+  --md-sys-color-primaryContainer: #78350F;
+  --md-sys-color-primaryContainer-rgb: 120 53 15;
+  --md-sys-color-onPrimaryContainer: #FEF3C7;
+  --md-sys-color-onPrimaryContainer-rgb: 254 243 199;
+  --md-sys-color-inversePrimary: #D97706;
+  --md-sys-color-inversePrimary-rgb: 217 119 6;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SURFACE BLUR & GLASSMORPHISM MODES
+   ═══════════════════════════════════════════════════════════════════════ */
+
+[data-glass='flat'] .glass-panel,
+[data-glass='flat'] .glass-pill,
+[data-glass='flat'] [class*='backdrop-blur'] {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+[data-glass='subtle'] .glass-panel,
+[data-glass='subtle'] [class*='backdrop-blur'] {
+  backdrop-filter: blur(8px) saturate(130%) !important;
+  -webkit-backdrop-filter: blur(8px) saturate(130%) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   REDUCED MOTION & BATTERY SAVER
+   ═══════════════════════════════════════════════════════════════════════ */
+
+[data-reduced-motion='true'] *,
+[data-reduced-motion='true'] *::before,
+[data-reduced-motion='true'] *::after,
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}
+
+/* Aurora Motion Speeds */
+[data-aurora-motion='fluid'] .animate-aurora-drift {
+  animation-duration: 9s;
+}
+[data-aurora-motion='fluid'] .animate-aurora-sway {
+  animation-duration: 12s;
+}
+[data-aurora-motion='fluid'] .animate-aurora-pulse {
+  animation-duration: 7s;
+}
+
+[data-aurora-motion='static'] .animate-aurora-drift,
+[data-aurora-motion='static'] .animate-aurora-sway,
+[data-aurora-motion='static'] .animate-aurora-pulse,
+[data-aurora-motion='static'] .animate-ambient-orb-pulse {
+  animation: none !important;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════
    BASE TYPOGRAPHY & LAYOUT RESET
    ═══════════════════════════════════════════════════════════════════════ */
@@ -296,6 +460,24 @@ code, kbd, samp, pre {
   text-shadow: 0 0 14px rgba(56, 189, 248, 0.8), 0 0 32px rgba(56, 189, 248, 0.45);
   transform: scale(1.04);
   transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lyric-glow-aura {
+  text-shadow: 0 0 16px rgba(56, 189, 248, 0.8), 0 0 32px rgba(56, 189, 248, 0.45);
+}
+
+.lyric-glow-subtle {
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+}
+
+.lyric-glow-minimal {
+  text-shadow: none !important;
+}
+
+.lyric-lightweight * {
+  text-shadow: none !important;
+  box-shadow: none !important;
+  filter: none !important;
 }
 
 /* Neon Text Glow */
@@ -559,49 +741,42 @@ input[type="range"]:hover::-moz-range-thumb {
    SONORA SYNCHRONIZED LYRICS CINEMATIC ANIMATIONS
    ═══════════════════════════════════════════════════════════════════════ */
 
-/* 1. Luminous Rhythmic Breathing Aura (Cyan to Electric Violet) */
+/* 1. Lightweight Text Glow Pulse (Single subtle shadow + opacity pulse) */
 @keyframes lyricGlowPulse {
   0%, 100% {
-    text-shadow: 
-      0 0 16px rgba(56, 189, 248, 0.9),
-      0 0 32px rgba(56, 189, 248, 0.5),
-      0 0 60px rgba(56, 189, 248, 0.25);
-    filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.45));
+    opacity: 0.92;
   }
   50% {
-    text-shadow: 
-      0 0 22px rgba(168, 85, 247, 0.85),
-      0 0 44px rgba(168, 85, 247, 0.5),
-      0 0 80px rgba(168, 85, 247, 0.3);
-    filter: drop-shadow(0 0 16px rgba(168, 85, 247, 0.5));
+    opacity: 1;
   }
 }
 
 .animate-lyric-glow-pulse {
+  text-shadow: 0 0 12px rgba(56, 189, 248, 0.45);
   animation: lyricGlowPulse 2.5s ease-in-out infinite;
-  will-change: text-shadow, filter;
+  will-change: opacity;
 }
 
-/* 2. Animated Horizontal Gradient Shimmer Sweep */
+/* 2. Optimized Horizontal Gradient Shimmer Sweep */
 @keyframes lyricShimmer {
   0% {
-    background-position: 200% center;
+    background-position: 100% 50%;
   }
   100% {
-    background-position: -200% center;
+    background-position: 0% 50%;
   }
 }
 
 .animate-lyric-shimmer {
   background: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0.95) 0%,
-    rgba(186, 230, 253, 1) 25%,
-    rgba(255, 255, 255, 1) 50%,
-    rgba(216, 180, 254, 1) 75%,
-    rgba(255, 255, 255, 0.95) 100%
+    #ffffff 0%,
+    #bae6fd 40%,
+    #ffffff 60%,
+    #d8b4fe 80%,
+    #ffffff 100%
   );
-  background-size: 200% auto;
+  background-size: 200% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -627,34 +802,96 @@ input[type="range"]:hover::-moz-range-thumb {
   will-change: transform, opacity;
 }
 
-/* 4. Depth-of-Field utilities for lyrics lines */
+/* 4. Depth-of-Field utilities for lyrics lines with Cubic Ease-in-out */
 .lyric-dof-distant {
-  filter: blur(1px);
-  opacity: 0.32;
-  transform: scale(0.97);
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: filter, opacity, transform;
+  opacity: 0.35;
+  transform: scale(0.98);
+  transition: opacity 0.45s cubic-bezier(0.65, 0, 0.35, 1), transform 0.45s cubic-bezier(0.65, 0, 0.35, 1);
+  will-change: opacity, transform;
 }
 
 .lyric-dof-near {
-  filter: blur(0.5px);
-  opacity: 0.55;
-  transform: scale(0.99);
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: filter, opacity, transform;
+  opacity: 0.65;
+  transform: scale(0.98);
+  transition: opacity 0.45s cubic-bezier(0.65, 0, 0.35, 1), transform 0.45s cubic-bezier(0.65, 0, 0.35, 1);
+  will-change: opacity, transform;
 }
 
 .lyric-dof-active {
-  filter: blur(0px);
   opacity: 1;
-  transform: scale(1.05);
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: filter, opacity, transform;
+  transform: scale(1.02);
+  transition: opacity 0.45s cubic-bezier(0.65, 0, 0.35, 1), transform 0.45s cubic-bezier(0.65, 0, 0.35, 1);
+  will-change: opacity, transform;
 }
 
 .lyric-dof-distant:hover,
 .lyric-dof-near:hover {
-  filter: blur(0px);
   opacity: 0.85;
-  transform: scale(1.01);
+  transform: scale(1);
+  transition: opacity 0.3s cubic-bezier(0.65, 0, 0.35, 1), transform 0.3s cubic-bezier(0.65, 0, 0.35, 1);
 }
+
+.ease-in-out-cubic {
+  transition-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SONORA DYNAMIC AURORA AMBIENT LIGHT KEYFRAMES & UTILITIES
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Aurora Drift: subtle organic translation, scale, and angle drift */
+@keyframes auroraDrift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
+  }
+  33% {
+    transform: translate3d(3%, -4%, 0) scale(1.08) rotate(3deg);
+  }
+  66% {
+    transform: translate3d(-3%, 3%, 0) scale(0.96) rotate(-2deg);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
+  }
+}
+
+/* Aurora Sway: gentle counter-swaying rotation of secondary layer */
+@keyframes auroraSway {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1.05) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(-4%, -3%, 0) scale(1.15) rotate(-6deg);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1.05) rotate(0deg);
+  }
+}
+
+/* Aurora Pulse: soft luminous breathing */
+@keyframes auroraPulse {
+  0%, 100% {
+    opacity: 0.55;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: translate3d(2%, 2%, 0) scale(1.10);
+  }
+}
+
+.animate-aurora-drift {
+  animation: auroraDrift 20s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-aurora-sway {
+  animation: auroraSway 26s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-aurora-pulse {
+  animation: auroraPulse 14s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+

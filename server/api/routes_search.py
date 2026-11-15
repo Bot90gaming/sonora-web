@@ -14,9 +14,10 @@ def search(
     q: str = Query(..., description="Search query string"),
     filter: Optional[str] = Query("songs", description="Filter by songs, albums, artists, playlists, or all"),
     limit: int = Query(20, ge=1, le=50, description="Max results"),
+    source: Optional[str] = Query("all", description="Search provider: all, ytmusic, soundcloud"),
 ) -> Dict[str, Any]:
     """
-    Search YouTube Music.
+    Search music across providers (YouTube Music, SoundCloud, or All).
     Filter options:
       - 'songs' (default)
       - 'albums'
@@ -25,11 +26,14 @@ def search(
       - 'all'
     """
     filter_val = (filter or "songs").lower()
+    source_val = (source or "all").lower()
+
     if filter_val == "all":
-        results = music_service.search_all(query=q, limit=min(limit, 10))
+        results = music_service.search_all(query=q, limit=min(limit, 10), source=source_val)
         return {
             "query": q,
             "filter": "all",
+            "source": source_val,
             "results": results,
             "songs": results.get("songs", []),
             "albums": results.get("albums", []),
@@ -37,10 +41,11 @@ def search(
             "playlists": results.get("playlists", []),
         }
 
-    items = music_service.search(query=q, filter_=filter_val, limit=limit)
+    items = music_service.search(query=q, filter_=filter_val, limit=limit, source=source_val)
     return {
         "query": q,
         "filter": filter_val,
+        "source": source_val,
         "results": items,
         "items": items,
         "count": len(items),

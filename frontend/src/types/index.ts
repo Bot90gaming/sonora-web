@@ -7,6 +7,7 @@ export interface Track {
   durationFormatted?: string; // e.g. "3:45"
   thumbnail?: string;
   isLiked?: boolean;
+  source?: 'ytmusic' | 'soundcloud' | 'youtube' | string;
 }
 
 export interface Album {
@@ -47,6 +48,7 @@ export interface SearchResults {
 }
 
 export type SearchFilter = 'all' | 'songs' | 'albums' | 'artists' | 'playlists';
+export type SearchSource = 'all' | 'ytmusic' | 'soundcloud';
 
 export interface LyricLine {
   time: number; // time in seconds
@@ -75,4 +77,15 @@ export interface AppSettings {
   normalizeVolume: boolean;
   enableSyncedLyricsGlow: boolean;
   backendUrl: string;
+}
+
+export interface AuthStatus {
+  authenticated: boolean;
+  authType: 'google_oauth' | 'headers' | 'none';
+  canGoogleSignIn: boolean;
+}
+
+export interface HomeSection {
+  title: string;
+  contents: (Track | Album | Playlist)[];
 }

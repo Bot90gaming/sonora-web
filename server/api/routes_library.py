@@ -14,6 +14,15 @@ class HeadersAuthRequest(BaseModel):
     headers: str = Field(..., description="Raw HTTP request headers from music.youtube.com")
 
 
+class OAuthStartRequest(BaseModel):
+    client_id: Optional[str] = Field(None, description="Google Cloud OAuth Client ID")
+    client_secret: Optional[str] = Field(None, description="Google Cloud OAuth Client Secret")
+
+
+class OAuthPollRequest(BaseModel):
+    device_code: str = Field(..., description="Device verification code from start_oauth")
+
+
 # ── Auth Endpoints ────────────────────────────────────────────────────────────
 
 @router.get("/auth/status")
@@ -30,6 +39,26 @@ def login_with_headers(req: HeadersAuthRequest) -> Dict[str, Any]:
         return {"success": ok, "authenticated": ok}
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to authenticate with headers: {str(e)}")
+
+
+@router.post("/auth/oauth/start")
+def start_oauth(req: Optional[OAuthStartRequest] = None) -> Dict[str, Any]:
+    """Start Google OAuth device code flow for YouTube Music sign in."""
+    try:
+        cid = req.client_id if req else None
+        csec = req.client_secret if req else None
+        return music_service.start_oauth(client_id=cid, client_secret=csec)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/auth/oauth/poll")
+def poll_oauth(req: OAuthPollRequest) -> Dict[str, Any]:
+    """Poll status of in-progress Google OAuth device flow."""
+    try:
+        return music_service.poll_oauth(device_code=req.device_code)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.post("/auth/logout")

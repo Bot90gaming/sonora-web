@@ -9,15 +9,19 @@ import {
   Radio, 
   Sparkles,
   Waves,
-  Music2
+  Music2,
+  Check,
 } from 'lucide-react';
 import { usePlayer } from '../context/PlayerContext';
+import { AuthStatus } from '../types';
 
 export type NavTab = 'home' | 'search' | 'library' | 'playlists' | 'liked' | 'downloads';
 
 interface SidebarProps {
   currentTab: NavTab;
   onSelectTab: (tab: NavTab) => void;
+  onOpenAuth?: () => void;
+  authStatus?: AuthStatus;
 }
 
 interface NavItemDef {
@@ -27,7 +31,7 @@ interface NavItemDef {
   section: 'discover' | 'collection';
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onSelectTab }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onSelectTab, onOpenAuth, authStatus }) => {
   const { likedTracks, downloads, isStationMode, toggleStationMode } = usePlayer();
 
   const activeDownloadsCount = downloads.filter((d) => d.status === 'downloading').length;
@@ -299,6 +303,59 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onSelectTab }) => 
         </div>
       </div>
 
+      {/* YouTube Music Account / Sign-In Quick Card */}
+      {onOpenAuth && (
+        <div className="px-3 pt-2">
+          {authStatus?.authenticated ? (
+            <div
+              onClick={onOpenAuth}
+              className="p-3 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/15 border border-emerald-500/25 cursor-pointer transition-all duration-200 flex items-center justify-between group shadow-xs select-none"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                  <Check className="w-3.5 h-3.5 stroke-[3]" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-m3-on-surface truncate group-hover:text-emerald-400 transition-colors">
+                    YouTube Connected
+                  </p>
+                  <p className="text-[10px] text-emerald-400 font-medium truncate">
+                    Library Sync Active
+                  </p>
+                </div>
+              </div>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-semibold border border-emerald-500/30">
+                Manage
+              </span>
+            </div>
+          ) : (
+            <div
+              onClick={onOpenAuth}
+              className="p-3 rounded-2xl bg-gradient-to-r from-red-600/15 via-red-500/10 to-transparent hover:from-red-600/20 hover:to-red-500/15 border border-red-500/25 cursor-pointer transition-all duration-200 flex items-center justify-between group shadow-xs select-none"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-7 h-7 rounded-full bg-red-600/20 text-red-500 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                  </svg>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-m3-on-surface truncate group-hover:text-red-400 transition-colors">
+                    YouTube Sign In
+                  </p>
+                  <p className="text-[10px] text-m3-on-surface-variant truncate">
+                    Sync your library
+                  </p>
+                </div>
+              </div>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-600/20 text-red-400 font-bold uppercase tracking-wider group-hover:bg-red-600/30 transition-colors">
+                Connect
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Sonora Station Mode Toggle Card with Glowing Active Soundwave Badge */}
       <div className="p-3">
         <div
@@ -325,17 +382,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onSelectTab }) => 
               </div>
               <span className="text-xs font-bold text-m3-on-surface">Sonora Station</span>
 
-              {/* Glowing Soundwave Badge */}
+              {/* Active Station Mode Live Badge */}
               {isStationMode && (
-                <div
-                  className="flex items-center gap-[2.5px] h-3 px-1.5 py-0.5 rounded-full bg-blue-500/25 border border-blue-400/40 shadow-[0_0_8px_rgba(59,130,246,0.5)]"
-                  title="Live soundwave recommendation engine"
+                <span
+                  className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-400/30 text-[9px] font-bold uppercase tracking-wider shadow-[0_0_8px_rgba(59,130,246,0.25)]"
+                  title="Live recommendation engine active"
                 >
-                  <span className="w-[2px] bg-blue-400 rounded-full animate-equalizer-1 h-full" />
-                  <span className="w-[2px] bg-blue-400 rounded-full animate-equalizer-2 h-full" />
-                  <span className="w-[2px] bg-blue-400 rounded-full animate-equalizer-3 h-full" />
-                  <span className="w-[2px] bg-blue-400 rounded-full animate-equalizer-4 h-full" />
-                </div>
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                  Live
+                </span>
               )}
             </div>
 

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { Track, RepeatMode, DownloadItem, LyricLine } from '../types';
-import { api, SAMPLE_TRACKS, parseLrc, SAMPLE_LRC } from '../services/api';
+import { api } from '../services/api';
 
 interface PlayerContextType {
   currentTrack: Track | null;
@@ -33,6 +33,7 @@ interface PlayerContextType {
   toggleShuffle: () => void;
   cycleRepeat: () => void;
   toggleLike: (track?: Track) => void;
+  syncLikedTracks: (tracks: Track[]) => void;
   addToQueue: (track: Track) => void;
   playNextInQueue: (track: Track) => void;
   removeFromQueue: (index: number) => void;
@@ -54,23 +55,22 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const initialTime = urlParams && urlParams.get('time') ? parseFloat(urlParams.get('time')!) : (initialLyricsOpen ? 8.5 : 0);
   const initialPlaying = urlParams ? urlParams.get('playing') === 'true' : false;
 
-  const [currentTrack, setCurrentTrack] = useState<Track | null>(SAMPLE_TRACKS[0]);
+  const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [isPlaying, setIsPlaying] = useState<boolean>(initialPlaying);
   const [currentTime, setCurrentTime] = useState<number>(initialTime);
-  const [duration, setDuration] = useState<number>(SAMPLE_TRACKS[0].duration || 214);
+  const [duration, setDuration] = useState<number>(0);
   const [volume, setVolumeState] = useState<number>(0.8);
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [repeatMode, setRepeatMode] = useState<RepeatMode>('off');
   const [isShuffle, setIsShuffle] = useState<boolean>(false);
-  const [queue, setQueue] = useState<Track[]>(SAMPLE_TRACKS);
+  const [queue, setQueue] = useState<Track[]>([]);
   const [queueIndex, setQueueIndex] = useState<number>(0);
   const [isStationMode, setIsStationMode] = useState<boolean>(true);
   const [isLyricsOpen, setIsLyricsOpen] = useState<boolean>(initialLyricsOpen);
   const [isQueueOpen, setIsQueueOpen] = useState<boolean>(initialQueueOpen);
   const [lyricsLoading, setLyricsLoading] = useState<boolean>(false);
   const [lyrics, setLyrics] = useState<{ syncedLyrics?: string; plainLyrics?: string; lines: LyricLine[] }>(() => ({
-    syncedLyrics: SAMPLE_LRC,
-    lines: parseLrc(SAMPLE_LRC)
+    lines: []
   }));
 
   // Old mock sample track IDs to clean up on initialization
@@ -445,6 +445,14 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
   }, [currentTrack]);
 
+  const syncLikedTracks = useCallback((incoming: Track[]) => {
+    setLikedTracks((prev) => {
+      const existingIds = new Set(prev.map((t) => t.id));
+      const newItems = incoming.filter((t) => !existingIds.has(t.id));
+      return [...prev, ...newItems];
+    });
+  }, []);
+
   const addToQueue = useCallback((track: Track) => {
     setQueue((prev) => [...prev, track]);
   }, []);
@@ -575,6 +583,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         toggleShuffle,
         cycleRepeat,
         toggleLike,
+        syncLikedTracks,
         addToQueue,
         playNextInQueue,
         removeFromQueue,

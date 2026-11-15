@@ -124,10 +124,27 @@ def get_ytmusic_client() -> YTMusic:
 
 
 def setup_from_headers(headers_raw: str) -> str:
+    import re
     _TOKEN_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
     os.chmod(_TOKEN_DIR, 0o700)
+    
+    raw = headers_raw.strip()
+    # Support "Copy as cURL" directly from browser devtools
+    if raw.startswith("curl ") or "\ncurl " in raw:
+        extracted = re.findall(r"-(?:H|b)\s+['\"]([^'\"]+)['\"]", raw)
+        if extracted:
+            raw = "\n".join(extracted)
+
+    # Support raw Cookie string without "cookie: " prefix
+    if "cookie:" not in raw.lower() and ("sapisid=" in raw.lower() or "sid=" in raw.lower()):
+        raw = f"cookie: {raw}"
+
+    # Auto-add x-goog-authuser default if absent
+    if "x-goog-authuser" not in raw.lower():
+        raw += "\nx-goog-authuser: 0"
+
     cleaned_lines = []
-    for line in headers_raw.splitlines():
+    for line in raw.splitlines():
         trimmed = line.strip()
         if (trimmed.startswith(("GET ", "POST ", "PUT ", "DELETE ", "OPTIONS ", "HEAD ", "HTTP/"))
                 or trimmed.startswith(":")

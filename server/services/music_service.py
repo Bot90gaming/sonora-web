@@ -4,7 +4,9 @@ Music service wrapping core.api.MusicAPI and auth.auth_manager for the Sonora ba
 from __future__ import annotations
 
 import logging
+import os
 import sys
+import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -13,6 +15,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from ytmusicapi import OAuthCredentials
 from auth import auth_manager
 from core.api import AuthenticationRequiredError, MusicAPI
 
@@ -23,6 +26,7 @@ class MusicService:
     def __init__(self) -> None:
         self._yt_client = None
         self._api: Optional[MusicAPI] = None
+        self._active_oauth: Optional[Dict[str, Any]] = None
         self._init_api()
 
     def _init_api(self) -> None:
@@ -43,13 +47,90 @@ class MusicService:
 
     # ── Search ────────────────────────────────────────────────────────────────
 
-    def search(self, query: str, filter_: str = "songs", limit: int = 20) -> List[Dict[str, Any]]:
-        """Search YouTube Music by filter (songs, albums, artists, playlists)."""
+    def search_soundcloud(self, query: str, limit: int = 15) -> List[Dict[str, Any]]:
+        """Search SoundCloud for tracks and remixes using yt-dlp."""
+        if not query or not query.strip():
+            return []
+        import yt_dlp
+        ydl_opts = {
+            "quiet": True,
+            "no_warnings": True,
+            "extract_flat": True,
+            "nocheckcertificate": True,
+            "skip_download": True,
+        }
+        tracks: List[Dict[str, Any]] = []
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                search_res = ydl.extract_info(f"scsearch{limit}:{query.strip()}", download=False)
+                for entry in (search_res.get("entries") or []):
+                    if not entry or not entry.get("id"):
+                        continue
+                    sc_id = str(entry.get("id"))
+                    duration = 0
+                    try:
+                        duration = int(entry.get("duration") or 0)
+                    except (ValueError, TypeError):
+                        pass
+
+                    thumbnails = entry.get("thumbnails") or []
+                    thumb_url = entry.get("thumbnail") or (thumbnails[-1].get("url") if thumbnails else "")
+
+                    tracks.append({
+                        "videoId": f"sc_{sc_id}",
+                        "id": f"sc_{sc_id}",
+                        "title": entry.get("title") or "Unknown Track",
+                        "artist": entry.get("uploader") or entry.get("artist") or "SoundCloud Artist",
+                        "album": "SoundCloud",
+                        "duration": duration,
+                        "thumbnail": thumb_url,
+                        "source": "soundcloud",
+                        "streamUrl": f"/api/stream/sc_{sc_id}",
+                    })
+        except Exception as e:
+            logger.warning("SoundCloud search failed for query '%s': %s", query, e)
+        return tracks
+
+    def search(self, query: str, filter_: str = "songs", limit: int = 20, source: str = "all") -> List[Dict[str, Any]]:
+        """Search across music sources (YouTube Music, SoundCloud, or All)."""
         valid_filters = {"songs", "albums", "artists", "playlists"}
         clean_filter = filter_.lower() if filter_.lower() in valid_filters else "songs"
-        return self.api.search(query, filter_=clean_filter, limit=limit)
+        src = (source or "all").lower()
 
-    def search_all(self, query: str, limit: int = 5) -> Dict[str, List[Dict[str, Any]]]:
+        if src == "soundcloud":
+            if clean_filter == "songs":
+                return self.search_soundcloud(query, limit=limit)
+            return []
+
+        if src == "ytmusic" or clean_filter != "songs":
+            items = self.api.search(query, filter_=clean_filter, limit=limit)
+            for item in items:
+                item["source"] = "ytmusic"
+            return items
+
+        # Default 'all' source for songs: aggregate YouTube Music and SoundCloud
+        yt_items = self.api.search(query, filter_="songs", limit=limit)
+        for item in yt_items:
+            item["source"] = "ytmusic"
+
+        sc_items = self.search_soundcloud(query, limit=min(limit, 8))
+
+        # Interleave results: 2 YouTube Music, 1 SoundCloud
+        combined: List[Dict[str, Any]] = []
+        y_i, s_i = 0, 0
+        while y_i < len(yt_items) or s_i < len(sc_items):
+            if y_i < len(yt_items):
+                combined.append(yt_items[y_i])
+                y_i += 1
+            if y_i < len(yt_items):
+                combined.append(yt_items[y_i])
+                y_i += 1
+            if s_i < len(sc_items):
+                combined.append(sc_items[s_i])
+                s_i += 1
+        return combined
+
+    def search_all(self, query: str, limit: int = 5, source: str = "all") -> Dict[str, List[Dict[str, Any]]]:
         """Multi-category search returning songs, albums, artists, and playlists."""
         results: Dict[str, List[Dict[str, Any]]] = {
             "songs": [],
@@ -57,12 +138,26 @@ class MusicService:
             "artists": [],
             "playlists": [],
         }
+        src = (source or "all").lower()
+
+        if src == "soundcloud":
+            results["songs"] = self.search_soundcloud(query, limit=limit * 2)
+            return results
+
         for category in ("songs", "albums", "artists", "playlists"):
             try:
                 results[category] = self.api.search(query, filter_=category, limit=limit)
+                for item in results[category]:
+                    item["source"] = "ytmusic"
             except Exception as e:
                 logger.debug("Failed search for category %s: %s", category, e)
                 results[category] = []
+
+        if src in ("all", "soundcloud"):
+            sc_tracks = self.search_soundcloud(query, limit=limit)
+            # Combine songs
+            results["songs"].extend(sc_tracks)
+
         return results
 
     def get_search_suggestions(self, query: str) -> List[str]:
@@ -92,6 +187,33 @@ class MusicService:
         """Fetch metadata and track info for a song."""
         if not video_id:
             raise ValueError("video_id is required")
+
+        if video_id.startswith("sc_"):
+            from server.services.stream_service import stream_service
+            try:
+                info = stream_service.resolve_audio_url(video_id)
+                return {
+                    "videoId": video_id,
+                    "title": info.get("title") or "SoundCloud Track",
+                    "artist": "SoundCloud",
+                    "album": "SoundCloud",
+                    "duration": int(info.get("duration") or 0),
+                    "thumbnail": "",
+                    "source": "soundcloud",
+                    "streamUrl": f"/api/stream/{video_id}",
+                }
+            except Exception as e:
+                logger.warning("Failed to resolve soundcloud song %s: %s", video_id, e)
+                return {
+                    "videoId": video_id,
+                    "title": "SoundCloud Track",
+                    "artist": "SoundCloud",
+                    "album": "SoundCloud",
+                    "duration": 0,
+                    "thumbnail": "",
+                    "source": "soundcloud",
+                    "streamUrl": f"/api/stream/{video_id}",
+                }
 
         try:
             song_data = self._yt_client.get_song(video_id)
@@ -308,8 +430,80 @@ class MusicService:
     def logout(self) -> bool:
         """Log out and reset authenticated client."""
         auth_manager.logout()
+        self._active_oauth = None
         self._init_api()
         return True
+
+    def start_oauth(self, client_id: Optional[str] = None, client_secret: Optional[str] = None) -> Dict[str, Any]:
+        """Initiate Google OAuth device code flow."""
+        cid = (client_id or "").strip() or os.environ.get("SONORA_GOOGLE_CLIENT_ID", "").strip()
+        csec = (client_secret or "").strip() or os.environ.get("SONORA_GOOGLE_CLIENT_SECRET", "").strip()
+
+        if not cid or not csec:
+            try:
+                creds = auth_manager._google_oauth_credentials()
+                cid = creds.get("client_id", "").strip()
+                csec = creds.get("client_secret", "").strip()
+            except Exception:
+                pass
+
+        if not cid or not csec:
+            raise ValueError(
+                "Google Client ID & Client Secret are required for Google OAuth. "
+                "Enter your credentials or use the Browser Request Headers tab instead."
+            )
+
+        credentials = OAuthCredentials(cid, csec)
+        code = credentials.get_code()
+        self._active_oauth = {
+            "credentials": credentials,
+            "device_code": code["device_code"],
+            "client_data": {"client_id": cid, "client_secret": csec},
+            "expires_at": time.time() + code.get("expires_in", 1800),
+        }
+        return {
+            "verification_url": code.get("verification_url", "https://www.google.com/device"),
+            "user_code": code["user_code"],
+            "device_code": code["device_code"],
+            "expires_in": code.get("expires_in", 1800),
+            "interval": code.get("interval", 5),
+        }
+
+    def poll_oauth(self, device_code: str) -> Dict[str, Any]:
+        """Poll for completion of Google OAuth device flow."""
+        if not self._active_oauth:
+            raise ValueError("No active OAuth session found. Please start sign-in again.")
+
+        if self._active_oauth.get("device_code") != device_code:
+            raise ValueError("Device code does not match active OAuth session.")
+
+        credentials: OAuthCredentials = self._active_oauth["credentials"]
+        response = credentials.token_from_code(device_code)
+        error = response.get("error")
+
+        if not error:
+            token = {
+                "scope": response["scope"],
+                "token_type": response["token_type"],
+                "access_token": response["access_token"],
+                "refresh_token": response["refresh_token"],
+                "expires_at": int(time.time()) + response["expires_in"],
+                "expires_in": response.get("refresh_token_expires_in", response["expires_in"]),
+            }
+            auth_manager._TOKEN_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
+            auth_manager._write_private_json(auth_manager._GOOGLE_TOKEN_FILE, token)
+            auth_manager._write_private_json(auth_manager._GOOGLE_CREDENTIALS_FILE, self._active_oauth["client_data"])
+            auth_manager._TOKEN_FILE.unlink(missing_ok=True)
+            self._active_oauth = None
+            self._init_api()
+            return {"status": "success", "authenticated": True}
+
+        if error == "authorization_pending":
+            return {"status": "pending"}
+        if error == "slow_down":
+            return {"status": "pending", "slow_down": True}
+
+        return {"status": "error", "error": response.get("error_description", error)}
 
 
 # Global music service singleton
