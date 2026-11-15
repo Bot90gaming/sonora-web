@@ -58,7 +58,7 @@ export const YouTubeAuthModal: React.FC<YouTubeAuthModalProps> = ({
   const [oauthPolling, setOauthPolling] = useState(false);
   const [oauthError, setOauthError] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState(false);
-  const pollTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // General feedback
   const [successMessage, setSuccessMessage] = useState<string | null>(null);

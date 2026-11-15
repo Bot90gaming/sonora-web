@@ -65,11 +65,16 @@ class StreamService:
             "no_warnings": True,
             "nocache": True,
             "nocheckcertificate": True,
+            "extractor_args": {
+                "youtube": {
+                    "player_client": ["android", "ios"]
+                }
+            },
             "http_headers": {
                 "User-Agent": (
-                    "Mozilla/5.0 (X11; Linux x86_64) "
+                    "Mozilla/5.0 (Linux; Android 14) "
                     "AppleWebKit/537.36 (KHTML, like Gecko) "
-                    "Chrome/125.0.0.0 Safari/537.36"
+                    "Chrome/125.0.0.0 Mobile Safari/537.36"
                 ),
             },
         }
@@ -88,7 +93,7 @@ class StreamService:
             sc_id = video_id[3:]
             url = f"https://api.soundcloud.com/tracks/{sc_id}"
         else:
-            url = f"https://music.youtube.com/watch?v={video_id}"
+            url = f"https://www.youtube.com/watch?v={video_id}"
         opts = self._get_ydl_opts()
 
         for attempt in range(1, 3):

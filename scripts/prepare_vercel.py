@@ -25,7 +25,10 @@ def sync():
         shutil.copytree(
             src,
             dest,
-            ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "*.sqlite", "test_*", ".pytest_cache")
+            ignore=shutil.ignore_patterns(
+                "__pycache__", "*.pyc", "*.sqlite", "test_*", ".pytest_cache",
+                "requirements.txt", "pyproject.toml", "*.lock", ".venv"
+            )
         )
         print(f"Synced {mod} -> {dest}")
 
