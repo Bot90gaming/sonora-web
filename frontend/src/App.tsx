@@ -19,9 +19,12 @@ import { DownloadsView } from './views/DownloadsView';
 import { usePlayer } from './context/PlayerContext';
 import { Album, Playlist, Track, AuthStatus } from './types';
 import { api } from './services/api';
+import { useDeviceDetect } from './utils/device';
+import { MobileApp } from './MobileApp';
 
 export const App: React.FC = () => {
   const { isLyricsOpen, isQueueOpen, currentTrack } = usePlayer();
+  const { isMobile, preference, setMode } = useDeviceDetect();
   const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
   const initialTab = (urlParams?.get('tab') as NavTab) || 'home';
   const initialQuery = urlParams?.get('q') || '';
@@ -105,6 +108,29 @@ export const App: React.FC = () => {
     setDownloadModalTrack(track);
   };
 
+  if (isMobile) {
+    return (
+      <div className="min-h-screen w-screen overflow-x-hidden bg-m3-surface text-m3-on-surface relative">
+        {/* Cinematic Opening Animation on Launch */}
+        {showIntro && (
+          <OpeningAnimation onComplete={() => setShowIntro(false)} />
+        )}
+        <MobileApp
+          currentTab={currentTab}
+          onTabChange={handleSelectTab}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          selectedDetail={selectedDetail}
+          onSelectDetail={setSelectedDetail}
+          authStatus={authStatus}
+          onCheckAuth={checkAuth}
+          deviceMode={preference}
+          onSetDeviceMode={setMode}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-m3-surface text-m3-on-surface relative">
       {/* Cinematic Opening Animation on Launch */}
@@ -130,6 +156,7 @@ export const App: React.FC = () => {
           onReload={() => window.location.reload()}
           authStatus={authStatus}
           searchQuery={searchQuery}
+          onToggleMobileMode={() => setMode('mobile')}
         />
 
         {/* View Router with Smooth Page Transitions */}

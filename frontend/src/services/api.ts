@@ -576,18 +576,22 @@ class ApiService {
 
     const songs: Track[] = (rawSongs || []).map((item: any) => {
       const videoId = item.videoId || item.id || item.video_id;
+      const isSoundCloud = item.source === 'soundcloud' || videoId?.startsWith('sc_');
       return {
         id: videoId,
         title: item.title || item.name,
-        artist: item.artist || (item.artists && item.artists[0]?.name) || 'Unknown Artist',
-        album: item.album?.name || item.album || '',
+        artist: item.artist || (item.artists && item.artists[0]?.name) || (isSoundCloud ? 'SoundCloud Artist' : 'Unknown Artist'),
+        album: item.album?.name || item.album || (isSoundCloud ? 'SoundCloud' : ''),
         duration: item.duration_seconds || item.duration || 180,
-        durationFormatted: item.duration || '3:00',
+        durationFormatted:
+          typeof item.duration === 'number'
+            ? `${Math.floor(item.duration / 60)}:${(item.duration % 60).toString().padStart(2, '0')}`
+            : item.duration || '3:00',
         thumbnail:
           item.thumbnails?.[item.thumbnails.length - 1]?.url ||
           item.thumbnail ||
-          (videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : ''),
-        source: item.source || (videoId?.startsWith('sc_') ? 'soundcloud' : 'ytmusic'),
+          (!isSoundCloud && videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : ''),
+        source: item.source || (isSoundCloud ? 'soundcloud' : 'ytmusic'),
       };
     });
 

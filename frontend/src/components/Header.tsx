@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Sun, Moon, Settings, X, Music, RotateCw } from 'lucide-react';
+import { Search, Sun, Moon, Settings, X, Music, RotateCw, Smartphone } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { api } from '../services/api';
 import { AuthStatus } from '../types';
@@ -11,6 +11,7 @@ interface HeaderProps {
   onReload?: () => void;
   authStatus?: AuthStatus;
   searchQuery: string;
+  onToggleMobileMode?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -20,6 +21,7 @@ export const Header: React.FC<HeaderProps> = ({
   onReload,
   authStatus,
   searchQuery,
+  onToggleMobileMode,
 }) => {
   const { theme, toggleTheme } = useTheme();
   const [inputValue, setInputValue] = useState(searchQuery);
@@ -286,6 +288,18 @@ export const Header: React.FC<HeaderProps> = ({
           </span>
           <span>Sonora Web</span>
         </div>
+
+        {/* Switch to Mobile View Toggle */}
+        {onToggleMobileMode && (
+          <button
+            onClick={onToggleMobileMode}
+            title="Switch to Mobile View"
+            aria-label="Switch to Mobile View"
+            className="relative w-10 h-10 rounded-m3-full flex items-center justify-center bg-m3-surface-container-high/60 hover:bg-m3-surface-container-highest border border-m3-outline-variant/25 transition-all duration-300 hover:scale-105 active:scale-95 shadow-xs group focus:outline-none focus:ring-2 focus:ring-m3-primary/30"
+          >
+            <Smartphone className="w-4 h-4 text-m3-on-surface-variant group-hover:text-m3-primary transition-colors" />
+          </button>
+        )}
 
         {/* Smooth Animated Dark/Light Theme Switch Toggle */}
         <button

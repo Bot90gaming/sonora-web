@@ -92,8 +92,12 @@ class LyricsService:
         """Check Sonora desktop's local sqlite cache for cached synced lyrics."""
         if not video_id:
             return None
-        db_path = Path.home() / ".cache" / "sonora" / "cache.sqlite"
-        if not db_path.exists():
+        try:
+            home = Path.home()
+            db_path = home / ".cache" / "sonora" / "cache.sqlite"
+            if not db_path.exists():
+                return None
+        except Exception:
             return None
         try:
             con = sqlite3.connect(str(db_path))

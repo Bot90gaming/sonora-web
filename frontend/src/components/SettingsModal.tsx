@@ -28,6 +28,9 @@ import {
   Layers,
   Languages,
   Cpu,
+  Smartphone,
+  Monitor,
+  Laptop,
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { AuthStatus } from '../types';
@@ -54,6 +57,12 @@ import {
   saveUiSettings,
   SETTINGS_CHANGED_EVENT,
 } from '../utils/settings';
+import {
+  getStoredDeviceMode,
+  setStoredDeviceMode,
+  DeviceMode,
+  DEVICE_MODE_CHANGED_EVENT,
+} from '../utils/device';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -171,12 +180,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   // Deep UI / Appearance settings (Persistent)
   const [uiSettings, setUiSettingsState] = useState<UiSettings>(getStoredUiSettings);
+  const [deviceMode, setDeviceModeState] = useState<DeviceMode>(getStoredDeviceMode);
 
   // Sync settings when modal opens or on external event
   useEffect(() => {
     if (isOpen) {
       setLyricsSettingsState(getStoredLyricsSettings());
       setUiSettingsState(getStoredUiSettings());
+      setDeviceModeState(getStoredDeviceMode());
     }
   }, [isOpen]);
 
@@ -189,9 +200,24 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         setUiSettingsState(custom.detail.settings);
       }
     };
+    const handleDeviceChanged = (e: Event) => {
+      const custom = e as CustomEvent<{ mode: DeviceMode }>;
+      if (custom.detail?.mode) {
+        setDeviceModeState(custom.detail.mode);
+      }
+    };
     window.addEventListener(SETTINGS_CHANGED_EVENT, handleChanged);
-    return () => window.removeEventListener(SETTINGS_CHANGED_EVENT, handleChanged);
+    window.addEventListener(DEVICE_MODE_CHANGED_EVENT, handleDeviceChanged);
+    return () => {
+      window.removeEventListener(SETTINGS_CHANGED_EVENT, handleChanged);
+      window.removeEventListener(DEVICE_MODE_CHANGED_EVENT, handleDeviceChanged);
+    };
   }, []);
+
+  const handleSetDeviceMode = (mode: DeviceMode) => {
+    setDeviceModeState(mode);
+    setStoredDeviceMode(mode);
+  };
 
   // Handlers for updating lyrics settings
   const updateLyrics = (patch: Partial<LyricsSettings>) => {
@@ -806,6 +832,67 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {/* TAB 3: APPEARANCE (DEEP UI SETTINGS) */}
           {activeTab === 'appearance' && (
             <div className="space-y-6">
+              {/* SECTION 0: DEVICE LAYOUT VIEW MODE */}
+              <div className="p-4 rounded-m3-xl bg-m3-surface-container-high/30 border border-m3-outline-variant/20 space-y-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-sky-400 to-indigo-600 flex items-center justify-center text-white shadow-md">
+                    <Smartphone className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-m3-on-surface">Device Layout Mode</h3>
+                    <p className="text-xs text-m3-on-surface-variant">
+                      Auto-detect device or force full mobile or desktop web interface
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+                  {[
+                    {
+                      id: 'auto' as DeviceMode,
+                      label: 'Auto (Detect)',
+                      desc: 'Automatic mobile/desktop detection based on device & screen',
+                      icon: Laptop,
+                    },
+                    {
+                      id: 'mobile' as DeviceMode,
+                      label: 'Mobile Phone',
+                      desc: 'Bottom navigation dock, floating mini-player & full sheet',
+                      icon: Smartphone,
+                    },
+                    {
+                      id: 'desktop' as DeviceMode,
+                      label: 'Desktop Web',
+                      desc: 'Side navigation rail, persistent player bar & wide layout',
+                      icon: Monitor,
+                    },
+                  ].map((devOpt) => {
+                    const isSelected = deviceMode === devOpt.id;
+                    const Icon = devOpt.icon;
+                    return (
+                      <button
+                        key={devOpt.id}
+                        type="button"
+                        onClick={() => handleSetDeviceMode(devOpt.id)}
+                        className={`p-3 rounded-m3-lg border text-left flex flex-col gap-1.5 transition-all ${
+                          isSelected
+                            ? 'border-m3-primary bg-m3-primary-container/30 text-m3-on-surface ring-1 ring-m3-primary shadow-xs'
+                            : 'border-m3-outline-variant/30 bg-m3-surface-container-high/40 text-m3-on-surface-variant hover:bg-m3-surface-container-high/70'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Icon className={`w-4 h-4 ${isSelected ? 'text-m3-primary' : 'text-m3-on-surface-variant'}`} />
+                          <span className="text-xs font-bold">{devOpt.label}</span>
+                        </div>
+                        <span className="text-[10px] text-m3-on-surface-variant/80 leading-tight">
+                          {devOpt.desc}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* SECTION A: AURORA AMBIENT ENGINE */}
               <div className="p-4 rounded-m3-xl bg-m3-surface-container-high/30 border border-m3-outline-variant/20 space-y-4">
                 <div className="flex items-center justify-between border-b border-m3-outline-variant/15 pb-3">

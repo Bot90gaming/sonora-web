@@ -27,6 +27,7 @@ class MusicService:
         self._yt_client = None
         self._api: Optional[MusicAPI] = None
         self._active_oauth: Optional[Dict[str, Any]] = None
+        self._sc_track_cache: Dict[str, Dict[str, Any]] = {}
         self._init_api()
 
     def _init_api(self) -> None:
@@ -76,7 +77,7 @@ class MusicService:
                     thumbnails = entry.get("thumbnails") or []
                     thumb_url = entry.get("thumbnail") or (thumbnails[-1].get("url") if thumbnails else "")
 
-                    tracks.append({
+                    track_item = {
                         "videoId": f"sc_{sc_id}",
                         "id": f"sc_{sc_id}",
                         "title": entry.get("title") or "Unknown Track",
@@ -86,9 +87,29 @@ class MusicService:
                         "thumbnail": thumb_url,
                         "source": "soundcloud",
                         "streamUrl": f"/api/stream/sc_{sc_id}",
-                    })
+                    }
+                    tracks.append(track_item)
+                    self._sc_track_cache[track_item["id"]] = track_item
+                    self._sc_track_cache[track_item["videoId"]] = track_item
         except Exception as e:
             logger.warning("SoundCloud search failed for query '%s': %s", query, e)
+
+        # Pre-cache top 2 soundcloud tracks in background thread for instant playback
+        if tracks:
+            def _precache():
+                import threading
+                from server.services.stream_service import stream_service
+                for t in tracks[:2]:
+                    try:
+                        vid = t["id"]
+                        if not stream_service._check_local_file(vid):
+                            stream_service._fetch_soundcloud_to_cache(vid)
+                    except Exception as err:
+                        logger.debug("SoundCloud pre-cache failed for %s: %s", t.get("id"), err)
+
+            import threading
+            threading.Thread(target=_precache, daemon=True).start()
+
         return tracks
 
     def search(self, query: str, filter_: str = "songs", limit: int = 20, source: str = "all") -> List[Dict[str, Any]]:
@@ -189,25 +210,33 @@ class MusicService:
             raise ValueError("video_id is required")
 
         if video_id.startswith("sc_"):
-            from server.services.stream_service import stream_service
+            if video_id in self._sc_track_cache:
+                return dict(self._sc_track_cache[video_id])
             try:
-                info = stream_service.resolve_audio_url(video_id)
-                return {
-                    "videoId": video_id,
-                    "title": info.get("title") or "SoundCloud Track",
-                    "artist": "SoundCloud",
-                    "album": "SoundCloud",
-                    "duration": int(info.get("duration") or 0),
-                    "thumbnail": "",
-                    "source": "soundcloud",
-                    "streamUrl": f"/api/stream/{video_id}",
-                }
+                sc_id = video_id[3:]
+                import yt_dlp
+                with yt_dlp.YoutubeDL({"quiet": True, "nocheckcertificate": True}) as ydl:
+                    info = ydl.extract_info(f"https://api.soundcloud.com/tracks/{sc_id}", download=False)
+                    thumbnails = info.get("thumbnails") or []
+                    thumb_url = info.get("thumbnail") or (thumbnails[-1].get("url") if thumbnails else "")
+                    track_data = {
+                        "videoId": video_id,
+                        "title": info.get("title") or "SoundCloud Track",
+                        "artist": info.get("uploader") or info.get("artist") or "SoundCloud Artist",
+                        "album": "SoundCloud",
+                        "duration": int(info.get("duration") or 0),
+                        "thumbnail": thumb_url,
+                        "source": "soundcloud",
+                        "streamUrl": f"/api/stream/{video_id}",
+                    }
+                    self._sc_track_cache[video_id] = track_data
+                    return track_data
             except Exception as e:
                 logger.warning("Failed to resolve soundcloud song %s: %s", video_id, e)
                 return {
                     "videoId": video_id,
                     "title": "SoundCloud Track",
-                    "artist": "SoundCloud",
+                    "artist": "SoundCloud Artist",
                     "album": "SoundCloud",
                     "duration": 0,
                     "thumbnail": "",

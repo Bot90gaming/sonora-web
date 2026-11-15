@@ -4,6 +4,7 @@ Audio download manager service using yt-dlp with FFmpeg audio extraction and job
 from __future__ import annotations
 
 import logging
+import os
 import re
 import threading
 import time
@@ -15,7 +16,10 @@ import yt_dlp
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_DOWNLOAD_DIR = Path.home() / "Music" / "Sonora"
+if os.environ.get("VERCEL") or not os.access(Path.home(), os.W_OK):
+    DEFAULT_DOWNLOAD_DIR = Path("/tmp") / "sonora" / "downloads"
+else:
+    DEFAULT_DOWNLOAD_DIR = Path.home() / "Music" / "Sonora"
 
 
 class DownloadService:

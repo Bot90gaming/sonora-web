@@ -17,7 +17,10 @@ from starlette.responses import Response, StreamingResponse
 
 logger = logging.getLogger(__name__)
 
-CACHE_DIR = Path.home() / ".cache" / "sonora" / "audio_stream"
+if os.environ.get("VERCEL") or not os.access(Path.home(), os.W_OK):
+    CACHE_DIR = Path("/tmp") / "sonora" / "audio_stream"
+else:
+    CACHE_DIR = Path.home() / ".cache" / "sonora" / "audio_stream"
 CHUNK_SIZE = 64 * 1024  # 64 KB
 
 
@@ -26,6 +29,34 @@ class StreamService:
         CACHE_DIR.mkdir(parents=True, exist_ok=True)
         self._url_cache: Dict[str, Dict[str, Any]] = {}  # video_id -> {url, expires_at, mime_type, content_length}
         self._cache_lock = threading.Lock()
+        self._sc_locks: Dict[str, threading.Lock] = {}
+        self._sc_meta_lock = threading.Lock()
+
+    def _get_sc_lock(self, video_id: str) -> threading.Lock:
+        with self._sc_meta_lock:
+            if video_id not in self._sc_locks:
+                self._sc_locks[video_id] = threading.Lock()
+            return self._sc_locks[video_id]
+
+    def _fetch_soundcloud_to_cache(self, video_id: str) -> Optional[Path]:
+        """Download and cache a SoundCloud track as a clean standard audio file (M4A/MP3)."""
+        sc_id = video_id[3:] if video_id.startswith("sc_") else video_id
+        target_pattern = str(CACHE_DIR / f"sonora_{video_id}.%(ext)s")
+        ydl_opts = {
+            "format": "bestaudio/best",
+            "outtmpl": target_pattern,
+            "nocheckcertificate": True,
+            "quiet": True,
+            "no_warnings": True,
+        }
+        try:
+            logger.info("Downloading SoundCloud track %s to cache...", video_id)
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([f"https://api.soundcloud.com/tracks/{sc_id}"])
+            return self._check_local_file(video_id)
+        except Exception as e:
+            logger.warning("Failed to download soundcloud track %s: %s", video_id, e)
+            return None
 
     def _get_ydl_opts(self) -> Dict[str, Any]:
         return {
@@ -105,7 +136,14 @@ class StreamService:
 
     def _check_local_file(self, video_id: str) -> Optional[Path]:
         """Check if audio has been cached locally."""
-        for base_dir in (CACHE_DIR, Path.home() / ".cache" / "sonora"):
+        cache_dirs = [CACHE_DIR]
+        try:
+            home_cache = Path.home() / ".cache" / "sonora"
+            if home_cache != CACHE_DIR:
+                cache_dirs.append(home_cache)
+        except Exception:
+            pass
+        for base_dir in cache_dirs:
             if not base_dir.exists():
                 continue
             candidates = [
@@ -127,7 +165,20 @@ class StreamService:
         if local_file and local_file.exists():
             return self._stream_local_file(local_file, range_header)
 
-        # 2. Otherwise proxy the direct audio stream from YouTube CDN
+        # 2. For SoundCloud tracks (HLS), download to cache and stream directly from disk
+        if video_id.startswith("sc_"):
+            with self._get_sc_lock(video_id):
+                local_file = self._check_local_file(video_id)
+                if not local_file or not local_file.exists():
+                    local_file = self._fetch_soundcloud_to_cache(video_id)
+            if local_file and local_file.exists():
+                return self._stream_local_file(local_file, range_header)
+            raise HTTPException(
+                status_code=502,
+                detail=f"Could not download SoundCloud audio stream for {video_id}",
+            )
+
+        # 3. Otherwise proxy the direct audio stream from YouTube CDN
         entry = self.resolve_audio_url(video_id)
         stream_url = entry["url"]
         mime_type = entry.get("mimeType", "audio/webm")

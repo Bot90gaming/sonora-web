@@ -13,7 +13,10 @@ from threading import Event
 from ytmusicapi import OAuthCredentials, YTMusic
 import ytmusicapi as _ytm
 
-_TOKEN_DIR  = Path.home() / ".config" / "ytmusic_player"
+if os.environ.get("VERCEL") or not os.access(Path.home(), os.W_OK):
+    _TOKEN_DIR = Path("/tmp") / ".config" / "ytmusic_player"
+else:
+    _TOKEN_DIR = Path.home() / ".config" / "ytmusic_player"
 _TOKEN_FILE = _TOKEN_DIR / "oauth.json"
 _GOOGLE_TOKEN_FILE = _TOKEN_DIR / "google_oauth.json"
 _GOOGLE_CREDENTIALS_FILE = _TOKEN_DIR / "google_oauth_credentials.json"
