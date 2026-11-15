@@ -4,7 +4,6 @@ import { MobileHeader } from './components/mobile/MobileHeader';
 import { MobileNavigation } from './components/mobile/MobileNavigation';
 import { MobileMiniPlayer } from './components/mobile/MobileMiniPlayer';
 import { MobileNowPlaying } from './components/mobile/MobileNowPlaying';
-import { MobileLyricsSheet } from './components/mobile/MobileLyricsSheet';
 import { MobileQueueSheet } from './components/mobile/MobileQueueSheet';
 import { SettingsModal } from './components/SettingsModal';
 import { DownloadModal } from './components/DownloadModal';
@@ -49,7 +48,6 @@ export const MobileApp: React.FC<MobileAppProps> = ({
   const { currentTrack } = usePlayer();
 
   const [isNowPlayingOpen, setIsNowPlayingOpen] = useState(false);
-  const [isLyricsSheetOpen, setIsLyricsSheetOpen] = useState(false);
   const [isQueueSheetOpen, setIsQueueSheetOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -155,17 +153,10 @@ export const MobileApp: React.FC<MobileAppProps> = ({
       <MobileNowPlaying
         isOpen={isNowPlayingOpen}
         onClose={() => setIsNowPlayingOpen(false)}
-        onOpenLyrics={() => setIsLyricsSheetOpen(true)}
         onOpenQueue={() => setIsQueueSheetOpen(true)}
         onOpenDownload={() => {
           if (currentTrack) setDownloadModalTrack(currentTrack);
         }}
-      />
-
-      {/* Mobile Synced Lyrics Sheet */}
-      <MobileLyricsSheet
-        isOpen={isLyricsSheetOpen}
-        onClose={() => setIsLyricsSheetOpen(false)}
       />
 
       {/* Mobile Queue Sheet */}

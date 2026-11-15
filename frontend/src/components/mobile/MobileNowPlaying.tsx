@@ -10,7 +10,6 @@ import {
   Repeat1,
   Heart,
   Music,
-  Mic2,
   ListMusic,
   Download,
 } from 'lucide-react';
@@ -28,7 +27,6 @@ const formatTime = (secs: number) => {
 interface MobileNowPlayingProps {
   isOpen: boolean;
   onClose: () => void;
-  onOpenLyrics: () => void;
   onOpenQueue: () => void;
   onOpenDownload: () => void;
 }
@@ -36,7 +34,6 @@ interface MobileNowPlayingProps {
 export const MobileNowPlaying: React.FC<MobileNowPlayingProps> = ({
   isOpen,
   onClose,
-  onOpenLyrics,
   onOpenQueue,
   onOpenDownload,
 }) => {
@@ -55,7 +52,6 @@ export const MobileNowPlaying: React.FC<MobileNowPlayingProps> = ({
     cycleRepeat,
     isLiked,
     toggleLike,
-    lyrics,
   } = usePlayer();
 
   const thumbnail = currentTrack?.thumbnail || (currentTrack?.id ? `https://i.ytimg.com/vi/${currentTrack.id}/hqdefault.jpg` : '');
@@ -64,7 +60,6 @@ export const MobileNowPlaying: React.FC<MobileNowPlayingProps> = ({
   if (!isOpen || !currentTrack) return null;
 
   const isCurrentLiked = isLiked(currentTrack.id);
-  const hasLyrics = (lyrics.lines && lyrics.lines.length > 0) || !!lyrics.plainLyrics;
 
   const handleScrubberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value);
@@ -220,28 +215,14 @@ export const MobileNowPlaying: React.FC<MobileNowPlayingProps> = ({
         </div>
       </div>
 
-      {/* Bottom Action Footer (Lyrics & Queue Quick Buttons) */}
-      <footer className="px-8 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-2 flex items-center justify-around border-t border-white/10 shrink-0">
-        {/* Lyrics Button */}
-        <button
-          onClick={onOpenLyrics}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold transition-all active:scale-95 ${
-            hasLyrics
-              ? 'bg-sky-500/20 text-sky-300 border border-sky-400/30'
-              : 'bg-white/10 text-white/70 hover:text-white'
-          }`}
-        >
-          <Mic2 className="w-4 h-4 text-sky-400" />
-          <span>Lyrics</span>
-        </button>
-
-        {/* Up Next Queue Button */}
+      {/* Bottom Action Footer (Queue Quick Button) */}
+      <footer className="px-8 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-2 flex items-center justify-center border-t border-white/10 shrink-0">
         <button
           onClick={onOpenQueue}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-white/10 text-white/85 text-xs font-bold active:scale-95 transition-transform"
+          className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-white/10 hover:bg-white/15 text-white/90 text-xs font-bold active:scale-95 transition-all shadow-sm"
         >
           <ListMusic className="w-4 h-4 text-indigo-400" />
-          <span>Up Next</span>
+          <span>Up Next Queue</span>
         </button>
       </footer>
     </div>
