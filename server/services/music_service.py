@@ -444,13 +444,10 @@ class MusicService:
         elif has_headers:
             auth_type = "headers"
 
-        auth_payload = auth_manager.get_stored_auth_payload() if is_auth else None
-
         return {
             "authenticated": is_auth,
             "authType": auth_type,
             "canGoogleSignIn": auth_manager.is_google_oauth_configured(),
-            "authPayload": auth_payload,
         }
 
     def login_with_headers(self, headers_raw: str) -> bool:
