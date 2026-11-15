@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Play, Heart, Plus, Download, Search, Disc, ListMusic, User } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Play, Heart, Plus, Download, Search, Disc, ListMusic, User, X } from 'lucide-react';
 import { Track, Album, Playlist, SearchResults, SearchFilter, SearchSource } from '../types';
 import { api, handleImageError } from '../services/api';
 import { usePlayer } from '../context/PlayerContext';
 
 interface SearchViewProps {
   initialQuery?: string;
+  onQueryChange?: (query: string) => void;
   onSelectAlbum: (album: Album) => void;
   onSelectPlaylist: (playlist: Playlist) => void;
   onOpenDownload: (track: Track) => void;
@@ -13,6 +14,7 @@ interface SearchViewProps {
 
 export const SearchView: React.FC<SearchViewProps> = ({
   initialQuery = '',
+  onQueryChange,
   onSelectAlbum,
   onSelectPlaylist,
   onOpenDownload,
@@ -21,6 +23,12 @@ export const SearchView: React.FC<SearchViewProps> = ({
   const [filter, setFilter] = useState<SearchFilter>('all');
   const [source, setSource] = useState<SearchSource>('all');
   const [query, setQuery] = useState(initialQuery);
+  const [searchInput, setSearchInput] = useState(initialQuery);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+
   const [results, setResults] = useState<SearchResults>(() => ({
     query: '',
     songs: [],
@@ -32,7 +40,66 @@ export const SearchView: React.FC<SearchViewProps> = ({
 
   useEffect(() => {
     setQuery(initialQuery);
+    setSearchInput(initialQuery);
   }, [initialQuery]);
+
+  // Debounced auto-suggestions
+  useEffect(() => {
+    if (!searchInput.trim() || searchInput.trim().length < 2) {
+      setSuggestions([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const list = await api.getSuggestions(searchInput.trim());
+        setSuggestions(list);
+      } catch {
+        setSuggestions([]);
+      }
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  // Click outside to dismiss suggestions
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(e.target as Node) &&
+        searchInputRef.current &&
+        !searchInputRef.current.contains(e.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSearchSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const clean = searchInput.trim();
+    setQuery(clean);
+    onQueryChange?.(clean);
+    setShowSuggestions(false);
+    searchInputRef.current?.blur();
+  };
+
+  const handleSelectSuggestion = (s: string) => {
+    setSearchInput(s);
+    setQuery(s);
+    onQueryChange?.(s);
+    setShowSuggestions(false);
+    searchInputRef.current?.blur();
+  };
+
+  const handleClearSearch = () => {
+    setSearchInput('');
+    setQuery('');
+    onQueryChange?.('');
+    setSuggestions([]);
+    searchInputRef.current?.focus();
+  };
 
   useEffect(() => {
     let isCancelled = false;
@@ -75,7 +142,55 @@ export const SearchView: React.FC<SearchViewProps> = ({
   ];
 
   return (
-    <div className="p-6 lg:p-8 space-y-8 max-w-7xl mx-auto pb-16">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 max-w-7xl mx-auto pb-16">
+      {/* ──────────────── Main Interactive Search Input Bar ──────────────── */}
+      <div className="relative">
+        <form onSubmit={handleSearchSubmit} className="relative flex items-center">
+          <div className="absolute left-4 pointer-events-none text-m3-primary flex items-center justify-center">
+            <Search className="w-5 h-5" />
+          </div>
+          <input
+            ref={searchInputRef}
+            type="search"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onFocus={() => setShowSuggestions(true)}
+            placeholder="Search songs, albums, artists, or paste URL..."
+            className="w-full pl-12 pr-12 py-3.5 bg-m3-surface-container-high/90 focus:bg-m3-surface-container-highest border border-m3-outline-variant/30 focus:border-m3-primary rounded-2xl text-base font-medium text-m3-on-surface placeholder:text-m3-on-surface-variant/60 focus:outline-none transition-all shadow-sm"
+          />
+          {searchInput && (
+            <button
+              type="button"
+              onClick={handleClearSearch}
+              className="absolute right-3.5 p-1 rounded-full text-m3-on-surface-variant hover:text-m3-on-surface bg-m3-surface-variant/40 active:scale-90 transition-transform"
+              title="Clear search"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </form>
+
+        {/* Live Search Suggestions Dropdown */}
+        {showSuggestions && suggestions.length > 0 && (
+          <div
+            ref={suggestionsRef}
+            className="absolute top-full inset-x-0 mt-2 z-40 bg-m3-surface-container-high border border-m3-outline-variant/40 rounded-2xl shadow-2xl overflow-hidden py-1 backdrop-blur-xl"
+          >
+            {suggestions.map((s, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => handleSelectSuggestion(s)}
+                className="w-full px-4 py-2.5 text-left text-sm font-semibold text-m3-on-surface hover:bg-m3-surface-container-highest flex items-center gap-3 transition-colors active:bg-m3-primary/10"
+              >
+                <Search className="w-4 h-4 text-m3-primary" />
+                <span>{s}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Search Header & Filter Chips */}
       <div className="space-y-4">
         <div className="flex items-center gap-3">

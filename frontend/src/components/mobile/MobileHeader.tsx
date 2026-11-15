@@ -1,9 +1,10 @@
 import React from 'react';
-import { Music, Settings, RefreshCw, Monitor } from 'lucide-react';
+import { Music, Settings, RefreshCw, Monitor, Search } from 'lucide-react';
 import { AuthStatus } from '../../types';
 import { DeviceMode } from '../../utils/device';
 
 interface MobileHeaderProps {
+  onOpenSearch?: () => void;
   onOpenSettings: () => void;
   onOpenAuth: () => void;
   authStatus?: AuthStatus;
@@ -14,6 +15,7 @@ interface MobileHeaderProps {
 }
 
 export const MobileHeader: React.FC<MobileHeaderProps> = ({
+  onOpenSearch,
   onOpenSettings,
   onOpenAuth,
   authStatus,
@@ -40,7 +42,18 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
       </div>
 
       {/* Action Controls */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 sm:gap-2">
+        {/* Search Shortcut */}
+        {onOpenSearch && (
+          <button
+            onClick={onOpenSearch}
+            className="p-2 rounded-full text-m3-on-surface-variant hover:text-m3-primary hover:bg-m3-surface-container transition-colors active:scale-95"
+            title="Search Music"
+          >
+            <Search className="w-4 h-4" />
+          </button>
+        )}
+
         {/* Device Switcher (Quick Toggle Desktop / Mobile) */}
         <button
           onClick={onToggleDeviceMode}

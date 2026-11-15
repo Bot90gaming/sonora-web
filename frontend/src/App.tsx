@@ -201,6 +201,7 @@ export const App: React.FC = () => {
             ) : currentTab === 'search' ? (
               <SearchView
                 initialQuery={searchQuery}
+                onQueryChange={handleSearch}
                 onSelectAlbum={handleSelectAlbum}
                 onSelectPlaylist={handleSelectPlaylist}
                 onOpenDownload={handleOpenDownload}

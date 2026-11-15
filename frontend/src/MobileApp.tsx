@@ -37,7 +37,7 @@ export const MobileApp: React.FC<MobileAppProps> = ({
   currentTab,
   onTabChange,
   searchQuery,
-  onSearchChange: _onSearchChange,
+  onSearchChange,
   selectedDetail,
   onSelectDetail,
   authStatus,
@@ -77,6 +77,7 @@ export const MobileApp: React.FC<MobileAppProps> = ({
     <div className="relative flex flex-col w-full h-full overflow-hidden bg-m3-surface text-m3-on-surface">
       {/* Mobile Top App Bar */}
       <MobileHeader
+        onOpenSearch={() => onTabChange('search')}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenAuth={() => setIsAuthModalOpen(true)}
         authStatus={authStatus}
@@ -112,6 +113,7 @@ export const MobileApp: React.FC<MobileAppProps> = ({
         ) : currentTab === 'search' ? (
           <SearchView
             initialQuery={searchQuery}
+            onQueryChange={onSearchChange}
             onSelectAlbum={handleSelectAlbum}
             onSelectPlaylist={handleSelectPlaylist}
             onOpenDownload={(track) => setDownloadModalTrack(track)}
