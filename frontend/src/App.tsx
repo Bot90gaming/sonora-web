@@ -65,11 +65,23 @@ export const App: React.FC = () => {
     }
   }, []);
 
-  // Check for Magic Link / QR Code Sync parameter (?sync=<token> or ?pair=<token>)
+  // Check for Magic Link / QR Code Sync parameter (?sync=<token> or ?pair=<code> or ?token=<token>)
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const params = new URLSearchParams(window.location.search);
-    const syncToken = params.get('sync') || params.get('pair') || params.get('token');
+    const syncToken = params.get('sync') || params.get('token');
+    const pairCode = params.get('pair') || params.get('code');
+
+    const cleanUrl = () => {
+      params.delete('sync');
+      params.delete('pair');
+      params.delete('token');
+      params.delete('code');
+      const remaining = params.toString();
+      const newUrl = window.location.pathname + (remaining ? '?' + remaining : '');
+      window.history.replaceState({}, document.title, newUrl);
+    };
+
     if (syncToken) {
       const payload = decodeSyncToken(syncToken);
       if (payload) {
@@ -84,15 +96,29 @@ export const App: React.FC = () => {
           canGoogleSignIn: true,
         });
         api.restoreAuth(payload);
-        params.delete('sync');
-        params.delete('pair');
-        params.delete('token');
-        const remaining = params.toString();
-        const cleanUrl = window.location.pathname + (remaining ? '?' + remaining : '');
-        window.history.replaceState({}, document.title, cleanUrl);
+        cleanUrl();
       }
+    } else if (pairCode && pairCode.trim().length === 6) {
+      // Direct 6-digit pair claim from QR scan
+      api.claimPairCode(pairCode.trim())
+        .then((res) => {
+          if (res.authenticated) {
+            setAuthStatus({
+              authenticated: true,
+              authType: res.authType as any || 'headers',
+              canGoogleSignIn: true,
+            });
+            checkAuth();
+          }
+        })
+        .catch((err) => {
+          console.error('Failed to claim pair code from URL:', err);
+        })
+        .finally(() => {
+          cleanUrl();
+        });
     }
-  }, []);
+  }, [checkAuth]);
 
   useEffect(() => {
     checkAuth();

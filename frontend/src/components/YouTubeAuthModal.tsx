@@ -114,35 +114,58 @@ export const YouTubeAuthModal: React.FC<YouTubeAuthModalProps> = ({
     const stored = getStoredAuth();
     if (!stored || !stored.authenticated) return;
     setPairLoading(true);
+
+    const origin =
+      typeof window !== 'undefined'
+        ? window.location.origin
+        : 'https://sonora-web-music.vercel.app';
+
     try {
-      const origin =
-        typeof window !== 'undefined'
-          ? window.location.origin
-          : 'https://sonora-web-music.vercel.app';
-      const token = encodeSyncToken(stored);
-      const link = `${origin}/?sync=${token}`;
-      setSyncUrl(link);
-
-      // Render crisp SVG QR code
-      const svg = await QRCode.toString(link, {
-        type: 'svg',
-        margin: 1,
-        width: 220,
-        color: {
-          dark: '#000000',
-          light: '#ffffff',
-        },
-      });
-      setQrSvg(svg);
-
-      // Request 6-digit PIN code from server
+      // 1. Request 6-digit PIN code from server FIRST
       const pairRes = await api.generatePairCode(stored, 600);
       if (pairRes && pairRes.code) {
         setPairCode(pairRes.code);
         setPairExpiresIn(pairRes.expires_in || 600);
+
+        // Render QR Code pointing to ?pair=<code> (ultra-lightweight ~45 bytes, renders in ~5ms)
+        const pairLink = `${origin}/?pair=${pairRes.code}`;
+        const pairSvg = await QRCode.toString(pairLink, {
+          type: 'svg',
+          margin: 1,
+          width: 220,
+          color: {
+            dark: '#000000',
+            light: '#ffffff',
+          },
+        });
+        setQrSvg(pairSvg);
+      }
+
+      // 2. Prepare full Magic Sync Link for copy/pasting
+      const token = encodeSyncToken(stored);
+      if (token) {
+        setSyncUrl(`${origin}/?sync=${token}`);
       }
     } catch (err: any) {
       console.error('Failed to generate pairing data:', err);
+
+      // Fallback: Try generating QR from sync token if server request failed
+      try {
+        const token = encodeSyncToken(stored);
+        if (token) {
+          const directLink = `${origin}/?sync=${token}`;
+          setSyncUrl(directLink);
+          const fallbackSvg = await QRCode.toString(directLink, {
+            type: 'svg',
+            margin: 1,
+            width: 220,
+            color: { dark: '#000000', light: '#ffffff' },
+          });
+          setQrSvg(fallbackSvg);
+        }
+      } catch (qrErr) {
+        console.error('Fallback QR code error:', qrErr);
+      }
     } finally {
       setPairLoading(false);
     }
