@@ -59,6 +59,51 @@ export function clearStoredAuth(): void {
   }
 }
 
+/**
+ * Encodes auth credentials into a compact, URL-safe sync token for QR code and magic links.
+ */
+export function encodeSyncToken(data: StoredAuthData): string {
+  try {
+    const jsonStr = JSON.stringify(data);
+    return encodeURIComponent(
+      btoa(
+        encodeURIComponent(jsonStr).replace(/%([0-9A-F]{2})/g, (_, p1) =>
+          String.fromCharCode(parseInt(p1, 16))
+        )
+      )
+    );
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Decodes a sync token from URL or clipboard.
+ */
+export function decodeSyncToken(token: string): StoredAuthData | null {
+  if (!token) return null;
+  try {
+    const base64 = decodeURIComponent(token.trim());
+    const decodedStr = decodeURIComponent(
+      Array.prototype.map
+        .call(atob(base64), (c: string) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    const parsed = JSON.parse(decodedStr);
+    if (parsed && (parsed.authenticated || parsed.headers || parsed.token)) {
+      return parsed;
+    }
+  } catch {
+    try {
+      const parsed = JSON.parse(decodeURIComponent(token));
+      if (parsed && (parsed.authenticated || parsed.headers || parsed.token)) {
+        return parsed;
+      }
+    } catch {}
+  }
+  return null;
+}
+
 export function parseLrc(lrcText: string): LyricLine[] {
   if (!lrcText) return [];
   const lines = lrcText.split('\n');
@@ -769,6 +814,52 @@ class ApiService {
       // Ignore network errors during restore attempt
     }
     return { success: false, authenticated: false };
+  }
+
+  async generatePairCode(payload?: StoredAuthData, expiresIn = 600): Promise<{
+    success: boolean;
+    code: string;
+    expires_in: number;
+    expires_at: number;
+    authPayload?: any;
+  }> {
+    const dataToSend = payload || getStoredAuth();
+    const res = await fetch(`${API_BASE}/auth/pair/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ payload: dataToSend, expires_in: expiresIn }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Failed to generate mobile pairing code');
+    }
+    return await res.json();
+  }
+
+  async claimPairCode(code: string): Promise<{
+    success: boolean;
+    authenticated: boolean;
+    authType: string;
+    authPayload: StoredAuthData;
+  }> {
+    const res = await fetch(`${API_BASE}/auth/pair/claim`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Invalid or expired pairing code');
+    }
+    const data = await res.json();
+    if (data.authenticated && data.authPayload) {
+      setStoredAuth({
+        ...data.authPayload,
+        authenticated: true,
+        savedAt: Date.now(),
+      });
+    }
+    return data;
   }
 
   async loginWithHeaders(headers: string): Promise<{

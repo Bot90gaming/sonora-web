@@ -18,7 +18,7 @@ import { DownloadsView } from './views/DownloadsView';
 
 import { usePlayer } from './context/PlayerContext';
 import { Album, Playlist, Track, AuthStatus } from './types';
-import { api, getStoredAuth } from './services/api';
+import { api, getStoredAuth, setStoredAuth, decodeSyncToken } from './services/api';
 import { useDeviceDetect } from './utils/device';
 import { MobileApp } from './MobileApp';
 
@@ -62,6 +62,35 @@ export const App: React.FC = () => {
       setAuthStatus(status);
     } catch {
       // offline
+    }
+  }, []);
+
+  // Check for Magic Link / QR Code Sync parameter (?sync=<token> or ?pair=<token>)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const syncToken = params.get('sync') || params.get('pair') || params.get('token');
+    if (syncToken) {
+      const payload = decodeSyncToken(syncToken);
+      if (payload) {
+        setStoredAuth({
+          ...payload,
+          authenticated: true,
+          savedAt: Date.now(),
+        });
+        setAuthStatus({
+          authenticated: true,
+          authType: payload.authType || 'headers',
+          canGoogleSignIn: true,
+        });
+        api.restoreAuth(payload);
+        params.delete('sync');
+        params.delete('pair');
+        params.delete('token');
+        const remaining = params.toString();
+        const cleanUrl = window.location.pathname + (remaining ? '?' + remaining : '');
+        window.history.replaceState({}, document.title, cleanUrl);
+      }
     }
   }, []);
 
