@@ -16,7 +16,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
-import { api } from '../services/api';
+import { api, getStoredAuth } from '../services/api';
 import { AuthStatus } from '../types';
 
 interface YouTubeAuthModalProps {
@@ -31,10 +31,20 @@ export const YouTubeAuthModal: React.FC<YouTubeAuthModalProps> = ({
   onAuthChange,
 }) => {
   const [activeTab, setActiveTab] = useState<'headers' | 'oauth'>('headers');
-  const [authStatus, setAuthStatus] = useState<AuthStatus>({
-    authenticated: false,
-    authType: 'none',
-    canGoogleSignIn: false,
+  const [authStatus, setAuthStatus] = useState<AuthStatus>(() => {
+    const stored = getStoredAuth();
+    if (stored?.authenticated) {
+      return {
+        authenticated: true,
+        authType: stored.authType || 'headers',
+        canGoogleSignIn: true,
+      };
+    }
+    return {
+      authenticated: false,
+      authType: 'none',
+      canGoogleSignIn: false,
+    };
   });
 
   // Headers Tab state

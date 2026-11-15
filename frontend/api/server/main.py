@@ -13,9 +13,10 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
+from server.services.music_service import music_service
 from server.api.routes_download import router as download_router
 from server.api.routes_home import router as home_router
 from server.api.routes_library import router as library_router
@@ -46,6 +47,20 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def auth_rehydration_middleware(request: Request, call_next):
+    """Rehydrate YouTube Music authentication in stateless serverless environments."""
+    if request.method != "OPTIONS":
+        auth_header = request.headers.get("x-sonora-auth")
+        if auth_header and not music_service.get_auth_status()["authenticated"]:
+            try:
+                music_service.rehydrate_if_needed(auth_header)
+            except Exception as e:
+                logger.debug("Auth rehydration error: %s", e)
+    return await call_next(request)
+
 
 # Register API Routers
 app.include_router(search_router)

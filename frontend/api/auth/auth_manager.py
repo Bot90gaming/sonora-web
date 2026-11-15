@@ -126,12 +126,125 @@ def get_ytmusic_client() -> YTMusic:
     return YTMusic()
 
 
+def setup_from_json(headers_dict: dict[str, str]) -> str:
+    """Store sanitized YouTube Music headers directly from dictionary."""
+    _TOKEN_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
+    os.chmod(_TOKEN_DIR, 0o700)
+    cleaned = sanitize_headers_dict(headers_dict)
+    _TOKEN_FILE.write_text(json.dumps(cleaned, indent=4, ensure_ascii=True), encoding="utf-8")
+    os.chmod(_TOKEN_FILE, 0o600)
+    _GOOGLE_TOKEN_FILE.unlink(missing_ok=True)
+    _GOOGLE_CREDENTIALS_FILE.unlink(missing_ok=True)
+    return str(_TOKEN_FILE)
+
+
+def restore_google_oauth(token: dict, client_data: dict) -> None:
+    """Restore Google OAuth token and credentials files from client payload."""
+    _TOKEN_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
+    os.chmod(_TOKEN_DIR, 0o700)
+    _write_private_json(_GOOGLE_TOKEN_FILE, token)
+    _write_private_json(_GOOGLE_CREDENTIALS_FILE, client_data)
+    _TOKEN_FILE.unlink(missing_ok=True)
+
+
+def get_stored_auth_payload() -> dict | None:
+    """Return stored session payload for client localStorage persistence."""
+    try:
+        if _GOOGLE_TOKEN_FILE.exists() and _GOOGLE_CREDENTIALS_FILE.exists():
+            token = json.loads(_GOOGLE_TOKEN_FILE.read_text(encoding="utf-8"))
+            client_data = json.loads(_GOOGLE_CREDENTIALS_FILE.read_text(encoding="utf-8"))
+            return {
+                "authType": "google_oauth",
+                "token": token,
+                "client_data": client_data,
+            }
+        if _TOKEN_FILE.exists() and _TOKEN_FILE.stat().st_size > 10:
+            sanitize_oauth_file(_TOKEN_FILE)
+            content = _TOKEN_FILE.read_text(encoding="utf-8")
+            return {
+                "authType": "headers",
+                "headers": content,
+            }
+    except Exception:
+        pass
+    return None
+
+
+def restore_from_payload(payload: dict) -> bool:
+    """Restore auth session files from a client storage dictionary."""
+    if not isinstance(payload, dict):
+        return False
+    try:
+        auth_type = payload.get("authType")
+        if auth_type == "headers":
+            headers_val = payload.get("headers")
+            if isinstance(headers_val, dict):
+                setup_from_json(headers_val)
+                return is_authenticated()
+            elif isinstance(headers_val, str) and headers_val.strip():
+                setup_from_headers(headers_val)
+                return is_authenticated()
+        elif auth_type == "google_oauth":
+            token = payload.get("token")
+            client_data = payload.get("client_data")
+            if token and client_data:
+                restore_google_oauth(token, client_data)
+                return is_authenticated()
+    except Exception:
+        pass
+    return False
+
+
+def rehydrate(auth_header: str | None) -> bool:
+    """Rehydrate auth session from an HTTP header string (base64, URL-encoded, or JSON)."""
+    if not auth_header:
+        return False
+    import base64
+    import urllib.parse
+    raw = auth_header.strip()
+    data = None
+    # 1. Try base64 decoding
+    try:
+        decoded = base64.b64decode(raw).decode("utf-8")
+        data = json.loads(decoded)
+    except Exception:
+        pass
+
+    # 2. Try URL-decoding
+    if not data:
+        try:
+            decoded = urllib.parse.unquote(raw)
+            data = json.loads(decoded)
+        except Exception:
+            pass
+
+    # 3. Try direct JSON
+    if not data and raw.startswith("{"):
+        try:
+            data = json.loads(raw)
+        except Exception:
+            pass
+
+    if isinstance(data, dict):
+        return restore_from_payload(data)
+    return False
+
+
 def setup_from_headers(headers_raw: str) -> str:
     import re
     _TOKEN_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
     os.chmod(_TOKEN_DIR, 0o700)
     
     raw = headers_raw.strip()
+    # Support direct JSON payload string
+    if raw.startswith("{"):
+        try:
+            parsed_json = json.loads(raw)
+            if isinstance(parsed_json, dict):
+                return setup_from_json(parsed_json)
+        except Exception:
+            pass
+
     # Support "Copy as cURL" directly from browser devtools
     if raw.startswith("curl ") or "\ncurl " in raw:
         extracted = re.findall(r"-(?:H|b)\s+['\"]([^'\"]+)['\"]", raw)

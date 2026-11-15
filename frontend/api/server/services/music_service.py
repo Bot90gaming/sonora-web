@@ -444,16 +444,41 @@ class MusicService:
         elif has_headers:
             auth_type = "headers"
 
+        auth_payload = auth_manager.get_stored_auth_payload() if is_auth else None
+
         return {
             "authenticated": is_auth,
             "authType": auth_type,
             "canGoogleSignIn": auth_manager.is_google_oauth_configured(),
+            "authPayload": auth_payload,
         }
 
     def login_with_headers(self, headers_raw: str) -> bool:
         """Authenticate with pasted browser headers."""
         auth_manager.setup_from_headers(headers_raw)
         self._init_api()
+        return auth_manager.is_authenticated()
+
+    def get_stored_auth_payload(self) -> Optional[Dict[str, Any]]:
+        """Retrieve stored auth credentials payload."""
+        return auth_manager.get_stored_auth_payload()
+
+    def rehydrate_if_needed(self, auth_header: Optional[str] = None) -> bool:
+        """Re-hydrate authentication session from client-supplied header or payload."""
+        if not auth_header:
+            return auth_manager.is_authenticated()
+        if auth_manager.is_authenticated():
+            return True
+        ok = auth_manager.rehydrate(auth_header)
+        if ok:
+            self._init_api()
+        return auth_manager.is_authenticated()
+
+    def restore_session(self, payload: Dict[str, Any]) -> bool:
+        """Restore session from client storage dictionary."""
+        ok = auth_manager.restore_from_payload(payload)
+        if ok:
+            self._init_api()
         return auth_manager.is_authenticated()
 
     def logout(self) -> bool:
@@ -519,13 +544,25 @@ class MusicService:
                 "expires_at": int(time.time()) + response["expires_in"],
                 "expires_in": response.get("refresh_token_expires_in", response["expires_in"]),
             }
+            client_data = self._active_oauth["client_data"]
             auth_manager._TOKEN_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
             auth_manager._write_private_json(auth_manager._GOOGLE_TOKEN_FILE, token)
-            auth_manager._write_private_json(auth_manager._GOOGLE_CREDENTIALS_FILE, self._active_oauth["client_data"])
+            auth_manager._write_private_json(auth_manager._GOOGLE_CREDENTIALS_FILE, client_data)
             auth_manager._TOKEN_FILE.unlink(missing_ok=True)
             self._active_oauth = None
             self._init_api()
-            return {"status": "success", "authenticated": True}
+            return {
+                "status": "success",
+                "authenticated": True,
+                "authType": "google_oauth",
+                "token": token,
+                "client_data": client_data,
+                "authPayload": {
+                    "authType": "google_oauth",
+                    "token": token,
+                    "client_data": client_data,
+                },
+            }
 
         if error == "authorization_pending":
             return {"status": "pending"}

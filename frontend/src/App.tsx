@@ -18,7 +18,7 @@ import { DownloadsView } from './views/DownloadsView';
 
 import { usePlayer } from './context/PlayerContext';
 import { Album, Playlist, Track, AuthStatus } from './types';
-import { api } from './services/api';
+import { api, getStoredAuth } from './services/api';
 import { useDeviceDetect } from './utils/device';
 import { MobileApp } from './MobileApp';
 
@@ -40,10 +40,20 @@ export const App: React.FC = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(initialSettings);
   const [downloadModalTrack, setDownloadModalTrack] = useState<Track | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [authStatus, setAuthStatus] = useState<AuthStatus>({
-    authenticated: false,
-    authType: 'none',
-    canGoogleSignIn: false,
+  const [authStatus, setAuthStatus] = useState<AuthStatus>(() => {
+    const stored = getStoredAuth();
+    if (stored?.authenticated) {
+      return {
+        authenticated: true,
+        authType: stored.authType || 'headers',
+        canGoogleSignIn: true,
+      };
+    }
+    return {
+      authenticated: false,
+      authType: 'none',
+      canGoogleSignIn: false,
+    };
   });
 
   const checkAuth = useCallback(async () => {

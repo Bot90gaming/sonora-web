@@ -2,6 +2,63 @@ import { Track, Album, Playlist, SearchResults, LyricLine, SearchFilter, SearchS
 
 const API_BASE = '/api';
 
+export const AUTH_STORAGE_KEY = 'sonora_yt_auth_data';
+
+export interface StoredAuthData {
+  authenticated: boolean;
+  authType: 'headers' | 'google_oauth';
+  headers?: string | Record<string, string>;
+  token?: any;
+  client_data?: any;
+  savedAt?: number;
+}
+
+export function encodeAuthHeader(data: StoredAuthData): string {
+  try {
+    const jsonStr = JSON.stringify(data);
+    return btoa(
+      encodeURIComponent(jsonStr).replace(/%([0-9A-F]{2})/g, (_, p1) =>
+        String.fromCharCode(parseInt(p1, 16))
+      )
+    );
+  } catch {
+    return '';
+  }
+}
+
+export function getStoredAuth(): StoredAuthData | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed && (parsed.authenticated || parsed.headers || parsed.token)) {
+      return parsed;
+    }
+  } catch {
+    // Ignore invalid JSON
+  }
+  return null;
+}
+
+export function setStoredAuth(data: StoredAuthData): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(data));
+  } catch {
+    // Storage quota or disabled
+  }
+}
+
+export function clearStoredAuth(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+  } catch {
+    // Ignore
+  }
+}
+
 export function parseLrc(lrcText: string): LyricLine[] {
   if (!lrcText) return [];
   const lines = lrcText.split('\n');
@@ -234,11 +291,23 @@ export const SAMPLE_LRC = `[00:00.00] Sonora Synchronized Lyrics
 
 class ApiService {
   /**
+   * Helper to construct auth headers for stateless requests
+   */
+  getAuthHeaders(): Record<string, string> {
+    const stored = getStoredAuth();
+    if (!stored) return {};
+    const encoded = encodeAuthHeader(stored);
+    return encoded ? { 'X-Sonora-Auth': encoded } : {};
+  }
+
+  /**
    * Fetch personalized / trending home feed sections directly from YouTube Music
    */
   async getHome(limit = 10): Promise<HomeSection[]> {
     try {
-      const res = await fetch(`${API_BASE}/home?limit=${limit}`);
+      const res = await fetch(`${API_BASE}/home?limit=${limit}`, {
+        headers: this.getAuthHeaders(),
+      });
       if (res.ok) {
         const data = await res.json();
         const rawSections = data.sections || [];
@@ -625,18 +694,89 @@ class ApiService {
   // ── Authentication ────────────────────────────────────────────────────────
 
   async getAuthStatus(): Promise<AuthStatus> {
+    const stored = getStoredAuth();
+    const headers = this.getAuthHeaders();
     try {
-      const res = await fetch(`${API_BASE}/auth/status`);
+      const res = await fetch(`${API_BASE}/auth/status`, { headers });
       if (res.ok) {
-        return await res.json();
+        const data: AuthStatus & { authPayload?: any } = await res.json();
+        if (data.authenticated) {
+          // Keep localStorage up to date with server session data
+          if (data.authPayload) {
+            setStoredAuth({
+              authenticated: true,
+              authType: data.authType,
+              ...data.authPayload,
+              savedAt: Date.now(),
+            });
+          }
+          return data;
+        } else if (stored) {
+          // Server container rebooted or cold-started without /tmp session
+          // Attempt explicit restore via stored credentials
+          const restored = await this.restoreAuth(stored);
+          if (restored.authenticated) {
+            return {
+              authenticated: true,
+              authType: (restored.authType as any) || stored.authType,
+              canGoogleSignIn: data.canGoogleSignIn ?? true,
+            };
+          } else {
+            // Credentials actually expired or failed
+            clearStoredAuth();
+          }
+        }
+        return data;
       }
     } catch {
-      // Offline fallback
+      // Offline fallback: maintain authenticated state if stored credentials exist
+      if (stored && stored.authenticated) {
+        return {
+          authenticated: true,
+          authType: stored.authType,
+          canGoogleSignIn: true,
+        };
+      }
     }
     return { authenticated: false, authType: 'none', canGoogleSignIn: false };
   }
 
-  async loginWithHeaders(headers: string): Promise<{ success: boolean; authenticated: boolean }> {
+  async restoreAuth(payload: StoredAuthData): Promise<{
+    success: boolean;
+    authenticated: boolean;
+    authType?: string;
+    authPayload?: any;
+  }> {
+    try {
+      const res = await fetch(`${API_BASE}/auth/restore`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.authenticated) {
+          setStoredAuth({
+            ...payload,
+            authenticated: true,
+            authType: data.authType || payload.authType,
+            savedAt: Date.now(),
+          });
+        }
+        return data;
+      }
+    } catch {
+      // Ignore network errors during restore attempt
+    }
+    return { success: false, authenticated: false };
+  }
+
+  async loginWithHeaders(headers: string): Promise<{
+    success: boolean;
+    authenticated: boolean;
+    authType?: string;
+    authPayload?: any;
+  }> {
     const res = await fetch(`${API_BASE}/auth/headers`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -646,7 +786,16 @@ class ApiService {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.detail || 'Failed to authenticate with provided headers');
     }
-    return await res.json();
+    const data = await res.json();
+    if (data.authenticated) {
+      setStoredAuth({
+        authenticated: true,
+        authType: 'headers',
+        headers: data.authPayload?.headers || headers,
+        savedAt: Date.now(),
+      });
+    }
+    return data;
   }
 
   async startOAuth(clientId?: string, clientSecret?: string): Promise<{
@@ -673,6 +822,9 @@ class ApiService {
     error?: string;
     authenticated?: boolean;
     slow_down?: boolean;
+    token?: any;
+    client_data?: any;
+    authPayload?: any;
   }> {
     const res = await fetch(`${API_BASE}/auth/oauth/poll`, {
       method: 'POST',
@@ -683,22 +835,39 @@ class ApiService {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.detail || 'Error polling OAuth status');
     }
-    return await res.json();
+    const data = await res.json();
+    if (data.status === 'success' || data.authenticated) {
+      setStoredAuth({
+        authenticated: true,
+        authType: 'google_oauth',
+        token: data.token || data.authPayload?.token,
+        client_data: data.client_data || data.authPayload?.client_data,
+        savedAt: Date.now(),
+      });
+    }
+    return data;
   }
 
   async logout(): Promise<{ success: boolean; authenticated: boolean }> {
-    const res = await fetch(`${API_BASE}/auth/logout`, { method: 'POST' });
-    if (!res.ok) {
-      throw new Error('Failed to log out');
+    clearStoredAuth();
+    try {
+      const res = await fetch(`${API_BASE}/auth/logout`, { method: 'POST' });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch {
+      // Ignore
     }
-    return await res.json();
+    return { success: true, authenticated: false };
   }
 
   // ── User Library Sync ──────────────────────────────────────────────────────
 
   async getLibraryLikedSongs(limit = 100): Promise<Track[]> {
     try {
-      const res = await fetch(`${API_BASE}/library/liked?limit=${limit}`);
+      const res = await fetch(`${API_BASE}/library/liked?limit=${limit}`, {
+        headers: this.getAuthHeaders(),
+      });
       if (res.ok) {
         const data = await res.json();
         const rawTracks = data.tracks || [];
@@ -724,7 +893,9 @@ class ApiService {
 
   async getLibraryPlaylists(): Promise<Playlist[]> {
     try {
-      const res = await fetch(`${API_BASE}/library/playlists`);
+      const res = await fetch(`${API_BASE}/library/playlists`, {
+        headers: this.getAuthHeaders(),
+      });
       if (res.ok) {
         const data = await res.json();
         const raw = data.playlists || [];
@@ -745,7 +916,9 @@ class ApiService {
 
   async getLibraryAlbums(): Promise<Album[]> {
     try {
-      const res = await fetch(`${API_BASE}/library/albums`);
+      const res = await fetch(`${API_BASE}/library/albums`, {
+        headers: this.getAuthHeaders(),
+      });
       if (res.ok) {
         const data = await res.json();
         const raw = data.albums || [];
