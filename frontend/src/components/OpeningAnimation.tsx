@@ -84,6 +84,7 @@ export const OpeningAnimation: React.FC<OpeningAnimationProps> = ({
   return (
     <div
       onClick={handleComplete}
+      onTouchStart={handleComplete}
       className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center select-none overflow-hidden bg-[#0A0D14] text-white transition-all duration-700 ease-out cursor-pointer ${
         isExiting ? 'opacity-0 scale-105 pointer-events-none' : 'opacity-100 scale-100'
       }`}

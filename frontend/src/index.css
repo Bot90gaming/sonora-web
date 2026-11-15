@@ -444,6 +444,17 @@ code, kbd, samp, pre {
   transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   MOBILE HIGH-PERFORMANCE MOMENTUM SCROLLING
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.mobile-scroll-container {
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-y !important;
+  overscroll-behavior-y: contain !important;
+}
+
 .glass-card:hover {
   transform: translateY(-2px);
   border-color: rgba(56, 189, 248, 0.35);

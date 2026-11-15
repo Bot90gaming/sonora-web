@@ -74,6 +74,7 @@ export const App: React.FC = () => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       if (params.get('opening') === 'freeze' || params.get('freeze') === 'true') return true;
+      if (sessionStorage.getItem('sonora_intro_shown') === 'true') return false;
       if (
         params.get('nointro') === 'true' ||
         params.get('tab') ||
@@ -87,6 +88,13 @@ export const App: React.FC = () => {
     }
     return true;
   });
+
+  const handleIntroComplete = useCallback(() => {
+    setShowIntro(false);
+    try {
+      sessionStorage.setItem('sonora_intro_shown', 'true');
+    } catch {}
+  }, []);
 
   // Global handle for developer/automated screenshot testing to replay intro anytime
   useEffect(() => {
@@ -120,10 +128,10 @@ export const App: React.FC = () => {
 
   if (isMobile) {
     return (
-      <div className="min-h-screen w-screen overflow-x-hidden bg-m3-surface text-m3-on-surface relative">
+      <div className="fixed inset-0 w-full h-[100dvh] overflow-hidden bg-m3-surface text-m3-on-surface flex flex-col">
         {/* Cinematic Opening Animation on Launch */}
         {showIntro && (
-          <OpeningAnimation onComplete={() => setShowIntro(false)} />
+          <OpeningAnimation onComplete={handleIntroComplete} />
         )}
         <MobileApp
           currentTab={currentTab}
@@ -145,7 +153,7 @@ export const App: React.FC = () => {
     <div className="flex h-screen w-screen overflow-hidden bg-m3-surface text-m3-on-surface relative">
       {/* Cinematic Opening Animation on Launch */}
       {showIntro && (
-        <OpeningAnimation onComplete={() => setShowIntro(false)} />
+        <OpeningAnimation onComplete={handleIntroComplete} />
       )}
 
       {/* Sidebar NavRail */}

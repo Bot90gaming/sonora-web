@@ -76,7 +76,7 @@ export const MobileApp: React.FC<MobileAppProps> = ({
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-m3-surface text-m3-on-surface select-none pb-[calc(120px+env(safe-area-inset-bottom,0px))]">
+    <div className="relative flex flex-col w-full h-full overflow-hidden bg-m3-surface text-m3-on-surface">
       {/* Mobile Top App Bar */}
       <MobileHeader
         onOpenSettings={() => setIsSettingsOpen(true)}
@@ -88,8 +88,14 @@ export const MobileApp: React.FC<MobileAppProps> = ({
         onToggleDeviceMode={toggleDeviceMode}
       />
 
-      {/* Main Screen Content */}
-      <main className="flex-1 min-h-0 overflow-y-auto">
+      {/* Main Screen Content with Dedicated Touch Momentum Scrolling */}
+      <main
+        className="flex-1 min-h-0 w-full overflow-y-auto overscroll-y-contain pb-[calc(140px+env(safe-area-inset-bottom,0px))] mobile-scroll-container"
+        style={{
+          WebkitOverflowScrolling: 'touch',
+          touchAction: 'pan-y',
+        }}
+      >
         {selectedDetail ? (
           <DetailView
             item={selectedDetail.item}
