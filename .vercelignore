@@ -1,0 +1,13 @@
+.vercel/output
+.vercel/python
+.vercel/static-build
+.vercel/cache
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.lock
+.python-version
+node_modules
+dist

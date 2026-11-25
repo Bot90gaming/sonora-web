@@ -1,0 +1,908 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SONORA MATERIAL DESIGN 3 / YOUTUBE MUSIC DESIGN TOKENS
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Seed */
+  --md-sys-color-seed: #0284C7;
+
+  /* Primary (Luminous Sky Blue) */
+  --md-sys-color-primary: #0284C7;
+  --md-sys-color-primary-rgb: 2 132 199;
+  --md-sys-color-onPrimary: #FFFFFF;
+  --md-sys-color-onPrimary-rgb: 255 255 255;
+  --md-sys-color-primaryContainer: #E0F2FE;
+  --md-sys-color-primaryContainer-rgb: 224 242 254;
+  --md-sys-color-onPrimaryContainer: #0369A1;
+  --md-sys-color-onPrimaryContainer-rgb: 3 105 161;
+  --md-sys-color-inversePrimary: #38BDF8;
+  --md-sys-color-inversePrimary-rgb: 56 189 248;
+
+  /* Secondary (Electric Lavender) */
+  --md-sys-color-secondary: #7C3AED;
+  --md-sys-color-secondary-rgb: 124 58 237;
+  --md-sys-color-onSecondary: #FFFFFF;
+  --md-sys-color-onSecondary-rgb: 255 255 255;
+  --md-sys-color-secondaryContainer: #EDE9FE;
+  --md-sys-color-secondaryContainer-rgb: 237 233 254;
+  --md-sys-color-onSecondaryContainer: #5B21B6;
+  --md-sys-color-onSecondaryContainer-rgb: 91 33 182;
+
+  /* Tertiary (Hot Rose Accent) */
+  --md-sys-color-tertiary: #E11D48;
+  --md-sys-color-tertiary-rgb: 225 29 72;
+  --md-sys-color-onTertiary: #FFFFFF;
+  --md-sys-color-onTertiary-rgb: 255 255 255;
+  --md-sys-color-tertiaryContainer: #FFE4E6;
+  --md-sys-color-tertiaryContainer-rgb: 255 228 230;
+  --md-sys-color-onTertiaryContainer: #9F1239;
+  --md-sys-color-onTertiaryContainer-rgb: 159 18 57;
+
+  /* Error */
+  --md-sys-color-error: #DC2626;
+  --md-sys-color-error-rgb: 220 38 38;
+  --md-sys-color-onError: #FFFFFF;
+  --md-sys-color-onError-rgb: 255 255 255;
+  --md-sys-color-errorContainer: #FEE2E2;
+  --md-sys-color-errorContainer-rgb: 254 226 226;
+  --md-sys-color-onErrorContainer: #991B1B;
+  --md-sys-color-onErrorContainer-rgb: 153 27 27;
+
+  /* Surfaces & Containers (Light Clean Slate) */
+  --md-sys-color-surface: #F8FAFC;
+  --md-sys-color-surface-rgb: 248 250 252;
+  --md-sys-color-surfaceDim: #E2E8F0;
+  --md-sys-color-surfaceDim-rgb: 226 232 240;
+  --md-sys-color-surfaceBright: #FFFFFF;
+  --md-sys-color-surfaceBright-rgb: 255 255 255;
+  --md-sys-color-surfaceContainerLowest: #FFFFFF;
+  --md-sys-color-surfaceContainerLowest-rgb: 255 255 255;
+  --md-sys-color-surfaceContainerLow: #F1F5F9;
+  --md-sys-color-surfaceContainerLow-rgb: 241 245 249;
+  --md-sys-color-surfaceContainer: #E8EEF5;
+  --md-sys-color-surfaceContainer-rgb: 232 238 245;
+  --md-sys-color-surfaceContainerHigh: #DEE5EF;
+  --md-sys-color-surfaceContainerHigh-rgb: 222 229 239;
+  --md-sys-color-surfaceContainerHighest: #D4DEEA;
+  --md-sys-color-surfaceContainerHighest-rgb: 212 222 234;
+  --md-sys-color-surfaceVariant: #CBD5E1;
+  --md-sys-color-surfaceVariant-rgb: 203 213 225;
+
+  /* Typography / Text Colors */
+  --md-sys-color-onSurface: #0F172A;
+  --md-sys-color-onSurface-rgb: 15 23 42;
+  --md-sys-color-onSurfaceVariant: #475569;
+  --md-sys-color-onSurfaceVariant-rgb: 71 85 105;
+  --md-sys-color-inverseSurface: #0F172A;
+  --md-sys-color-inverseSurface-rgb: 15 23 42;
+  --md-sys-color-inverseOnSurface: #F8FAFC;
+  --md-sys-color-inverseOnSurface-rgb: 248 250 252;
+
+  /* Outlines & Elevation */
+  --md-sys-color-outline: #94A3B8;
+  --md-sys-color-outline-rgb: 148 163 184;
+  --md-sys-color-outlineVariant: #E2E8F0;
+  --md-sys-color-outlineVariant-rgb: 226 232 240;
+  --md-sys-color-scrim: #000000;
+  --md-sys-color-scrim-rgb: 0 0 0;
+  --md-sys-color-shadow: rgba(0, 0, 0, 0.12);
+  --md-sys-color-shadow-rgb: 0 0 0;
+
+  /* Shapes */
+  --md-sys-shape-corner-xs: 4px;
+  --md-sys-shape-corner-sm: 8px;
+  --md-sys-shape-corner-md: 12px;
+  --md-sys-shape-corner-lg: 16px;
+  --md-sys-shape-corner-xl: 24px;
+  --md-sys-shape-corner-2xl: 32px;
+  --md-sys-shape-corner-full: 9999px;
+}
+
+[data-theme='dark'] {
+  /* Seed */
+  --md-sys-color-seed: #38BDF8;
+
+  /* Primary (Neon Electric Cyan-Azure) */
+  --md-sys-color-primary: #38BDF8;
+  --md-sys-color-primary-rgb: 56 189 248;
+  --md-sys-color-onPrimary: #031726;
+  --md-sys-color-onPrimary-rgb: 3 23 38;
+  --md-sys-color-primaryContainer: #0F3B66;
+  --md-sys-color-primaryContainer-rgb: 15 59 102;
+  --md-sys-color-onPrimaryContainer: #E0F2FE;
+  --md-sys-color-onPrimaryContainer-rgb: 224 242 254;
+  --md-sys-color-inversePrimary: #0284C7;
+  --md-sys-color-inversePrimary-rgb: 2 132 199;
+
+  /* Secondary (Electric Radiant Violet) */
+  --md-sys-color-secondary: #A855F7;
+  --md-sys-color-secondary-rgb: 168 85 247;
+  --md-sys-color-onSecondary: #2E1065;
+  --md-sys-color-onSecondary-rgb: 46 16 101;
+  --md-sys-color-secondaryContainer: #3B1C6E;
+  --md-sys-color-secondaryContainer-rgb: 59 28 110;
+  --md-sys-color-onSecondaryContainer: #F3E8FF;
+  --md-sys-color-onSecondaryContainer-rgb: 243 232 255;
+
+  /* Tertiary (Neon Hot Rose) */
+  --md-sys-color-tertiary: #F43F5E;
+  --md-sys-color-tertiary-rgb: 244 63 94;
+  --md-sys-color-onTertiary: #4C0519;
+  --md-sys-color-onTertiary-rgb: 76 5 25;
+  --md-sys-color-tertiaryContainer: #881337;
+  --md-sys-color-tertiaryContainer-rgb: 136 19 55;
+  --md-sys-color-onTertiaryContainer: #FFE4E6;
+  --md-sys-color-onTertiaryContainer-rgb: 255 228 230;
+
+  /* Error */
+  --md-sys-color-error: #EF4444;
+  --md-sys-color-error-rgb: 239 68 68;
+  --md-sys-color-onError: #450A0A;
+  --md-sys-color-onError-rgb: 69 10 10;
+  --md-sys-color-errorContainer: #7F1D1D;
+  --md-sys-color-errorContainer-rgb: 127 29 29;
+  --md-sys-color-onErrorContainer: #FEE2E2;
+  --md-sys-color-onErrorContainer-rgb: 254 226 226;
+
+  /* Surfaces & Containers (Deep Midnight Obsidian Soundstage) */
+  --md-sys-color-surface: #0A0E17;
+  --md-sys-color-surface-rgb: 10 14 23;
+  --md-sys-color-surfaceDim: #06090F;
+  --md-sys-color-surfaceDim-rgb: 6 9 15;
+  --md-sys-color-surfaceBright: #1F293D;
+  --md-sys-color-surfaceBright-rgb: 31 41 61;
+  --md-sys-color-surfaceContainerLowest: #04060A;
+  --md-sys-color-surfaceContainerLowest-rgb: 4 6 10;
+  --md-sys-color-surfaceContainerLow: #0E1320;
+  --md-sys-color-surfaceContainerLow-rgb: 14 19 32;
+  --md-sys-color-surfaceContainer: #141B2D;
+  --md-sys-color-surfaceContainer-rgb: 20 27 45;
+  --md-sys-color-surfaceContainerHigh: #1A233A;
+  --md-sys-color-surfaceContainerHigh-rgb: 26 35 58;
+  --md-sys-color-surfaceContainerHighest: #232F4C;
+  --md-sys-color-surfaceContainerHighest-rgb: 35 47 76;
+  --md-sys-color-surfaceVariant: #2A3757;
+  --md-sys-color-surfaceVariant-rgb: 42 55 87;
+
+  /* Typography / Text Colors */
+  --md-sys-color-onSurface: #F8FAFC;
+  --md-sys-color-onSurface-rgb: 248 250 252;
+  --md-sys-color-onSurfaceVariant: #94A3B8;
+  --md-sys-color-onSurfaceVariant-rgb: 148 163 184;
+  --md-sys-color-inverseSurface: #F8FAFC;
+  --md-sys-color-inverseSurface-rgb: 248 250 252;
+  --md-sys-color-inverseOnSurface: #0F172A;
+  --md-sys-color-inverseOnSurface-rgb: 15 23 42;
+
+  /* Outlines & Elevation */
+  --md-sys-color-outline: #475569;
+  --md-sys-color-outline-rgb: 71 85 105;
+  --md-sys-color-outlineVariant: #1E293B;
+  --md-sys-color-outlineVariant-rgb: 30 41 59;
+  --md-sys-color-scrim: #000000;
+  --md-sys-color-scrim-rgb: 0 0 0;
+  --md-sys-color-shadow: rgba(0, 0, 0, 0.65);
+  --md-sys-color-shadow-rgb: 0 0 0;
+}
+
+[data-theme='amoled'] {
+  /* Seed */
+  --md-sys-color-seed: #38BDF8;
+
+  /* Primary */
+  --md-sys-color-primary: #38BDF8;
+  --md-sys-color-primary-rgb: 56 189 248;
+  --md-sys-color-onPrimary: #000000;
+  --md-sys-color-onPrimary-rgb: 0 0 0;
+  --md-sys-color-primaryContainer: #082F49;
+  --md-sys-color-primaryContainer-rgb: 8 47 73;
+  --md-sys-color-onPrimaryContainer: #E0F2FE;
+  --md-sys-color-onPrimaryContainer-rgb: 224 242 254;
+  --md-sys-color-inversePrimary: #0284C7;
+  --md-sys-color-inversePrimary-rgb: 2 132 199;
+
+  /* Surfaces & Containers (Pure AMOLED Pitch Black #000000) */
+  --md-sys-color-surface: #000000;
+  --md-sys-color-surface-rgb: 0 0 0;
+  --md-sys-color-surfaceDim: #000000;
+  --md-sys-color-surfaceDim-rgb: 0 0 0;
+  --md-sys-color-surfaceBright: #111115;
+  --md-sys-color-surfaceBright-rgb: 17 17 21;
+  --md-sys-color-surfaceContainerLowest: #000000;
+  --md-sys-color-surfaceContainerLowest-rgb: 0 0 0;
+  --md-sys-color-surfaceContainerLow: #050507;
+  --md-sys-color-surfaceContainerLow-rgb: 5 5 7;
+  --md-sys-color-surfaceContainer: #09090D;
+  --md-sys-color-surfaceContainer-rgb: 9 9 13;
+  --md-sys-color-surfaceContainerHigh: #101016;
+  --md-sys-color-surfaceContainerHigh-rgb: 16 16 22;
+  --md-sys-color-surfaceContainerHighest: #181822;
+  --md-sys-color-surfaceContainerHighest-rgb: 24 24 34;
+  --md-sys-color-surfaceVariant: #20202C;
+  --md-sys-color-surfaceVariant-rgb: 32 32 44;
+
+  /* Typography */
+  --md-sys-color-onSurface: #FFFFFF;
+  --md-sys-color-onSurface-rgb: 255 255 255;
+  --md-sys-color-onSurfaceVariant: #A1A1AA;
+  --md-sys-color-onSurfaceVariant-rgb: 161 161 170;
+  --md-sys-color-inverseSurface: #FFFFFF;
+  --md-sys-color-inverseSurface-rgb: 255 255 255;
+  --md-sys-color-inverseOnSurface: #000000;
+  --md-sys-color-inverseOnSurface-rgb: 0 0 0;
+
+  /* Outlines & Elevation */
+  --md-sys-color-outline: #3F3F46;
+  --md-sys-color-outline-rgb: 63 63 70;
+  --md-sys-color-outlineVariant: #18181B;
+  --md-sys-color-outlineVariant-rgb: 24 24 27;
+  --md-sys-color-scrim: #000000;
+  --md-sys-color-scrim-rgb: 0 0 0;
+  --md-sys-color-shadow: rgba(0, 0, 0, 0.95);
+  --md-sys-color-shadow-rgb: 0 0 0;
+}
+
+[data-theme='amoled'] .glass-panel {
+  background: rgba(0, 0, 0, 0.94);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ACCENT COLOR OVERRIDES
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Electric Purple */
+[data-accent='purple'] {
+  --md-sys-color-primary: #A855F7;
+  --md-sys-color-primary-rgb: 168 85 247;
+  --md-sys-color-primaryContainer: #3B1C6E;
+  --md-sys-color-primaryContainer-rgb: 59 28 110;
+  --md-sys-color-onPrimaryContainer: #F3E8FF;
+  --md-sys-color-onPrimaryContainer-rgb: 243 232 255;
+  --md-sys-color-inversePrimary: #7C3AED;
+  --md-sys-color-inversePrimary-rgb: 124 58 237;
+}
+
+/* Rose Pink */
+[data-accent='rose'] {
+  --md-sys-color-primary: #F43F5E;
+  --md-sys-color-primary-rgb: 244 63 94;
+  --md-sys-color-primaryContainer: #881337;
+  --md-sys-color-primaryContainer-rgb: 136 19 55;
+  --md-sys-color-onPrimaryContainer: #FFE4E6;
+  --md-sys-color-onPrimaryContainer-rgb: 255 228 230;
+  --md-sys-color-inversePrimary: #E11D48;
+  --md-sys-color-inversePrimary-rgb: 225 29 72;
+}
+
+/* Emerald Green */
+[data-accent='emerald'] {
+  --md-sys-color-primary: #10B981;
+  --md-sys-color-primary-rgb: 16 185 129;
+  --md-sys-color-primaryContainer: #064E3B;
+  --md-sys-color-primaryContainer-rgb: 6 78 59;
+  --md-sys-color-onPrimaryContainer: #D1FAE5;
+  --md-sys-color-onPrimaryContainer-rgb: 209 250 229;
+  --md-sys-color-inversePrimary: #059669;
+  --md-sys-color-inversePrimary-rgb: 5 150 105;
+}
+
+/* Sunset Amber */
+[data-accent='amber'] {
+  --md-sys-color-primary: #F59E0B;
+  --md-sys-color-primary-rgb: 245 158 11;
+  --md-sys-color-primaryContainer: #78350F;
+  --md-sys-color-primaryContainer-rgb: 120 53 15;
+  --md-sys-color-onPrimaryContainer: #FEF3C7;
+  --md-sys-color-onPrimaryContainer-rgb: 254 243 199;
+  --md-sys-color-inversePrimary: #D97706;
+  --md-sys-color-inversePrimary-rgb: 217 119 6;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SURFACE BLUR & GLASSMORPHISM MODES
+   ═══════════════════════════════════════════════════════════════════════ */
+
+[data-glass='flat'] .glass-panel,
+[data-glass='flat'] .glass-pill,
+[data-glass='flat'] [class*='backdrop-blur'] {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+[data-glass='subtle'] .glass-panel,
+[data-glass='subtle'] [class*='backdrop-blur'] {
+  backdrop-filter: blur(8px) saturate(130%) !important;
+  -webkit-backdrop-filter: blur(8px) saturate(130%) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   REDUCED MOTION & BATTERY SAVER
+   ═══════════════════════════════════════════════════════════════════════ */
+
+[data-reduced-motion='true'] *,
+[data-reduced-motion='true'] *::before,
+[data-reduced-motion='true'] *::after,
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}
+
+/* Aurora Motion Speeds */
+[data-aurora-motion='fluid'] .animate-aurora-drift {
+  animation-duration: 9s;
+}
+[data-aurora-motion='fluid'] .animate-aurora-sway {
+  animation-duration: 12s;
+}
+[data-aurora-motion='fluid'] .animate-aurora-pulse {
+  animation-duration: 7s;
+}
+
+[data-aurora-motion='static'] .animate-aurora-drift,
+[data-aurora-motion='static'] .animate-aurora-sway,
+[data-aurora-motion='static'] .animate-aurora-pulse,
+[data-aurora-motion='static'] .animate-ambient-orb-pulse {
+  animation: none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   BASE TYPOGRAPHY & LAYOUT RESET
+   ═══════════════════════════════════════════════════════════════════════ */
+
+body {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'tnum';
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--md-sys-color-surface);
+  color: var(--md-sys-color-onSurface);
+}
+
+code, kbd, samp, pre {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   PREMIUM CUSTOM SCROLLBARS
+   ═══════════════════════════════════════════════════════════════════════ */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--md-sys-color-surfaceVariant);
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--md-sys-color-outline);
+  background-clip: content-box;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   GLASSMORPHISM & SURFACE ELEVATION UTILITIES
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.glass-panel {
+  background: rgba(20, 27, 45, 0.72);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 32px 0 rgba(0, 0, 0, 0.38), inset 0 1px 1px 0 rgba(255, 255, 255, 0.10);
+}
+
+[data-theme='light'] .glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 12px 32px 0 rgba(15, 23, 42, 0.08), inset 0 1px 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+.glass-pill {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.glass-pill:hover {
+  background: rgba(255, 255, 255, 0.10);
+  border-color: rgba(56, 189, 248, 0.3);
+  box-shadow: 0 0 15px -3px rgba(56, 189, 248, 0.3);
+}
+
+[data-theme='light'] .glass-pill {
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme='light'] .glass-pill:hover {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(2, 132, 199, 0.4);
+}
+
+.glass-card {
+  background: var(--md-sys-color-surfaceContainer);
+  border: 1px solid var(--md-sys-color-outlineVariant);
+  transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   MOBILE HIGH-PERFORMANCE MOMENTUM SCROLLING
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.mobile-scroll-container {
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-y !important;
+  overscroll-behavior-y: contain !important;
+}
+
+.glass-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(56, 189, 248, 0.35);
+  box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.45), 0 0 20px -4px rgba(56, 189, 248, 0.25);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   AUDIO & MUSIC VISUALIZATIONS
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Lyrics Active Line Glow Aura */
+.lyric-active-glow {
+  color: var(--md-sys-color-primary);
+  text-shadow: 0 0 14px rgba(56, 189, 248, 0.8), 0 0 32px rgba(56, 189, 248, 0.45);
+  transform: scale(1.04);
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lyric-glow-aura {
+  text-shadow: 0 0 16px rgba(56, 189, 248, 0.8), 0 0 32px rgba(56, 189, 248, 0.45);
+}
+
+.lyric-glow-subtle {
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+}
+
+.lyric-glow-minimal {
+  text-shadow: none !important;
+}
+
+.lyric-lightweight * {
+  text-shadow: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+/* Neon Text Glow */
+.neon-text-cyan {
+  text-shadow: 0 0 10px rgba(56, 189, 248, 0.5), 0 0 20px rgba(56, 189, 248, 0.25);
+}
+
+.neon-text-violet {
+  text-shadow: 0 0 10px rgba(168, 85, 247, 0.5), 0 0 20px rgba(168, 85, 247, 0.25);
+}
+
+.neon-text-rose {
+  text-shadow: 0 0 10px rgba(244, 63, 94, 0.5), 0 0 20px rgba(244, 63, 94, 0.25);
+}
+
+/* Ambient Stage Lighting */
+.ambient-stage-glow {
+  position: absolute;
+  top: -10%;
+  left: 20%;
+  width: 60%;
+  height: 45%;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.12) 0%, rgba(168, 85, 247, 0.08) 50%, transparent 70%);
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+[data-theme='light'] .ambient-stage-glow {
+  background: radial-gradient(circle, rgba(2, 132, 199, 0.08) 0%, rgba(124, 58, 237, 0.05) 50%, transparent 70%);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   RANGE SLIDERS (AUDIO SCRUBBER & VOLUME)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+input[type="range"] {
+  -webkit-appearance: none;
+  background: transparent;
+}
+
+input[type="range"]:focus {
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 12px;
+  width: 12px;
+  border-radius: 9999px;
+  background: var(--md-sys-color-primary);
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+input[type="range"]:hover::-webkit-slider-thumb {
+  transform: scale(1.25);
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.8);
+}
+
+input[type="range"]::-moz-range-thumb {
+  height: 12px;
+  width: 12px;
+  border-radius: 9999px;
+  background: var(--md-sys-color-primary);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+input[type="range"]:hover::-moz-range-thumb {
+  transform: scale(1.25);
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.8);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SONORA CINEMATIC ANIMATIONS & TRANSITIONS (ANIMATOR)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Acoustic Soundwave Concentric Ripples */
+@keyframes soundwaveRipple {
+  0% {
+    transform: scale(0.7);
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+.animate-soundwave-ripple {
+  animation: soundwaveRipple 2.8s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+  will-change: transform, opacity;
+}
+
+/* Floating Ambient Aura */
+@keyframes floatAmbient {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(24px, -18px) scale(1.08);
+  }
+}
+
+.animate-float-ambient {
+  animation: floatAmbient 12s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+/* Sonora Opening Equalizer Bars Keyframes */
+@keyframes eqBar1 {
+  0%, 100% {
+    height: 25%;
+  }
+  50% {
+    height: 85%;
+  }
+}
+
+@keyframes eqBar2 {
+  0%, 100% {
+    height: 45%;
+  }
+  50% {
+    height: 100%;
+  }
+}
+
+@keyframes eqBar3 {
+  0%, 100% {
+    height: 70%;
+  }
+  50% {
+    height: 30%;
+  }
+}
+
+@keyframes eqBar4 {
+  0%, 100% {
+    height: 95%;
+  }
+  50% {
+    height: 20%;
+  }
+}
+
+@keyframes eqBar {
+  0%, 100% {
+    height: 20%;
+  }
+  50% {
+    height: 95%;
+  }
+}
+
+.animate-eq-bar-1 {
+  animation: eqBar1 0.75s ease-in-out infinite alternate;
+  transform-origin: bottom;
+}
+
+.animate-eq-bar-2 {
+  animation: eqBar2 0.65s ease-in-out infinite alternate 0.12s;
+  transform-origin: bottom;
+}
+
+.animate-eq-bar-3 {
+  animation: eqBar3 0.85s ease-in-out infinite alternate 0.25s;
+  transform-origin: bottom;
+}
+
+.animate-eq-bar-4 {
+  animation: eqBar4 0.55s ease-in-out infinite alternate 0.05s;
+  transform-origin: bottom;
+}
+
+/* Smooth Page View Transitions */
+@keyframes viewFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.995);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-view-fade-in {
+  animation: viewFadeIn 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: opacity, transform;
+}
+
+/* Drawer Slide In / Out Transitions */
+@keyframes drawerSlideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0.6;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-drawer-in-right {
+  animation: drawerSlideInRight 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+/* Lyrics Cinematic Zoom In */
+@keyframes lyricsZoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-lyrics-zoom {
+  animation: lyricsZoomIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+/* Tactile Micro-Interactions */
+.interactive-tap {
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+  will-change: transform;
+}
+
+.interactive-tap:hover {
+  transform: scale(1.04);
+}
+
+.interactive-tap:active {
+  transform: scale(0.95);
+}
+
+.card-hover-elevate {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+  will-change: transform, box-shadow;
+}
+
+.card-hover-elevate:hover {
+  transform: translateY(-4px) scale(1.012);
+  box-shadow: 0 14px 30px -8px rgba(0, 0, 0, 0.4);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SONORA SYNCHRONIZED LYRICS CINEMATIC ANIMATIONS
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* 1. Lightweight Text Glow Pulse (Single subtle shadow + opacity pulse) */
+@keyframes lyricGlowPulse {
+  0%, 100% {
+    opacity: 0.92;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-lyric-glow-pulse {
+  text-shadow: 0 0 12px rgba(56, 189, 248, 0.45);
+  animation: lyricGlowPulse 2.5s ease-in-out infinite;
+  will-change: opacity;
+}
+
+/* 2. Optimized Horizontal Gradient Shimmer Sweep */
+@keyframes lyricShimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-lyric-shimmer {
+  background: linear-gradient(
+    90deg,
+    #ffffff 0%,
+    #bae6fd 40%,
+    #ffffff 60%,
+    #d8b4fe 80%,
+    #ffffff 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: lyricShimmer 4s linear infinite;
+  display: inline-block;
+  will-change: background-position;
+}
+
+/* 3. Floating / Breathing Ambient Spotlight Orb */
+@keyframes ambientOrbPulse {
+  0%, 100% {
+    transform: scale(1) translate(0, 0);
+    opacity: 0.65;
+  }
+  50% {
+    transform: scale(1.15) translate(8px, -4px);
+    opacity: 0.95;
+  }
+}
+
+.animate-ambient-orb-pulse {
+  animation: ambientOrbPulse 3.5s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+/* 4. Depth-of-Field utilities for lyrics lines with Cubic Ease-in-out */
+.lyric-dof-distant {
+  opacity: 0.35;
+  transform: scale(0.98);
+  transition: opacity 0.45s cubic-bezier(0.65, 0, 0.35, 1), transform 0.45s cubic-bezier(0.65, 0, 0.35, 1);
+  will-change: opacity, transform;
+}
+
+.lyric-dof-near {
+  opacity: 0.65;
+  transform: scale(0.98);
+  transition: opacity 0.45s cubic-bezier(0.65, 0, 0.35, 1), transform 0.45s cubic-bezier(0.65, 0, 0.35, 1);
+  will-change: opacity, transform;
+}
+
+.lyric-dof-active {
+  opacity: 1;
+  transform: scale(1.02);
+  transition: opacity 0.45s cubic-bezier(0.65, 0, 0.35, 1), transform 0.45s cubic-bezier(0.65, 0, 0.35, 1);
+  will-change: opacity, transform;
+}
+
+.lyric-dof-distant:hover,
+.lyric-dof-near:hover {
+  opacity: 0.85;
+  transform: scale(1);
+  transition: opacity 0.3s cubic-bezier(0.65, 0, 0.35, 1), transform 0.3s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.ease-in-out-cubic {
+  transition-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SONORA DYNAMIC AURORA AMBIENT LIGHT KEYFRAMES & UTILITIES
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Aurora Drift: subtle organic translation, scale, and angle drift */
+@keyframes auroraDrift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
+  }
+  33% {
+    transform: translate3d(3%, -4%, 0) scale(1.08) rotate(3deg);
+  }
+  66% {
+    transform: translate3d(-3%, 3%, 0) scale(0.96) rotate(-2deg);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
+  }
+}
+
+/* Aurora Sway: gentle counter-swaying rotation of secondary layer */
+@keyframes auroraSway {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1.05) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(-4%, -3%, 0) scale(1.15) rotate(-6deg);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1.05) rotate(0deg);
+  }
+}
+
+/* Aurora Pulse: soft luminous breathing */
+@keyframes auroraPulse {
+  0%, 100% {
+    opacity: 0.55;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: translate3d(2%, 2%, 0) scale(1.10);
+  }
+}
+
+.animate-aurora-drift {
+  animation: auroraDrift 20s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-aurora-sway {
+  animation: auroraSway 26s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-aurora-pulse {
+  animation: auroraPulse 14s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+

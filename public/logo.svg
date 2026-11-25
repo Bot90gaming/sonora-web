@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="sonora-grad" x1="4" y1="4" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3B82F6"/>
+      <stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+  <rect width="48" height="48" rx="14" fill="url(#sonora-grad)"/>
+  <path d="M16 28C16 31.3137 18.6863 34 22 34C25.3137 34 28 31.3137 28 28V15H34V12H26V26.2C24.89 25.45 23.51 25 22 25C18.6863 25 16 27.6863 16 31V28Z" fill="white" filter="url(#glow)"/>
+</svg>
